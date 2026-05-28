@@ -1,0 +1,22 @@
+export const CONTENT_TYPES = [
+  { id: 'anime', label: 'Anime', category: 'Entertainment' },
+  { id: 'gaming', label: 'Gaming', category: 'Entertainment' },
+  { id: 'movies', label: 'Movies', category: 'Entertainment' },
+  { id: 'music', label: 'Music', category: 'Entertainment' },
+  { id: 'art', label: 'Art', category: 'Creative' },
+  { id: 'design', label: 'Design', category: 'Creative' },
+  { id: 'photography', label: 'Photography', category: 'Creative' },
+  { id: 'technology', label: 'Technology', category: 'Knowledge' },
+  { id: 'coding', label: 'Coding', category: 'Knowledge' },
+  { id: 'ai', label: 'AI', category: 'Knowledge' },
+  { id: 'science', label: 'Science', category: 'Knowledge' },
+  { id: 'books', label: 'Books', category: 'Knowledge' },
+  { id: 'fitness', label: 'Fitness', category: 'Lifestyle' },
+  { id: 'health', label: 'Health', category: 'Lifestyle' },
+  { id: 'food', label: 'Food', category: 'Lifestyle' },
+  { id: 'travel', label: 'Travel', category: 'Lifestyle' },
+  { id: 'sports', label: 'Sports', category: 'Lifestyle' },
+  { id: 'finance', label: 'Finance', category: 'Lifestyle' },
+  { id: 'productivity', label: 'Productivity', category: 'Lifestyle' },
+  { id: 'startups', label: 'Startups', category: 'Knowledge' }
+];
