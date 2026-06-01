@@ -201,7 +201,7 @@ export default function SuggestedConnections() {
                 }}
                 onClick={() => navigate(`/profile/${u.username}`)}
               >
-                <Avatar username={u.username} size={48} />
+                <Avatar username={u.username} image={u.profilePhoto} size={48} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-color)' }}>
                     {u.name || u.username}

@@ -115,7 +115,7 @@ mongoose.connect(MONGO_URI, { bufferCommands: false })
 
 // MODELS
 const NotificationSchema = new mongoose.Schema({
-  type: { type: String, enum: ['like', 'comment', 'follow', 'follow_request'], required: true },
+  type: { type: String, enum: ['like', 'comment', 'follow', 'follow_request', 'post', 'message'], required: true },
   fromUser: { type: String, required: true },
   postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
   username: { type: String },
@@ -133,6 +133,8 @@ const UserSchema = new mongoose.Schema({
   phone: { type: String },
   interests: [{ type: String }],
   bio: { type: String, default: '' },
+  profilePhoto: { type: String, default: '' },
+  photoVisibility: { type: String, enum: ['everyone', 'followers', 'nobody'], default: 'everyone' },
   isPrivate: { type: Boolean, default: false },
   feedPreference: { type: String, default: 'Friends', enum: ['Balanced', 'Friends', 'Suggested'] },
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
@@ -148,6 +150,22 @@ const UserSchema = new mongoose.Schema({
     username: String,
     name: String,
     searchedAt: { type: Date, default: Date.now }
+  }],
+  blockedUsers: [{
+    username: String,
+    blockedAt: { type: Date, default: Date.now }
+  }],
+  profileMutedUsers: [{
+    username: String,
+    duration: { type: String, enum: ['8h', '24h', '7d', 'forever'] },
+    mutedAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, default: null }
+  }],
+  dmMutedUsers: [{
+    username: String,
+    duration: { type: String, enum: ['8h', '24h', '7d', 'forever'] },
+    mutedAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, default: null }
   }]
 });
 
@@ -223,6 +241,15 @@ const MessageSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 
+const MessageRequestSchema = new mongoose.Schema({
+  sender: { type: String, required: true },
+  receiver: { type: String, required: true },
+  content: { type: String, default: '' },
+  image: { type: String, default: null },
+  status: { type: String, enum: ['pending', 'accepted', 'declined'], default: 'pending' },
+  timestamp: { type: Date, default: Date.now }
+});
+
 const ChannelMessageSchema = new mongoose.Schema({
   communityId: { type: mongoose.Schema.Types.ObjectId, ref: 'Community', required: true },
   channelName: { type: String, required: true },
@@ -290,6 +317,7 @@ const Vote = mongoose.model('Vote', VoteSchema);
 const Like = mongoose.model('Like', LikeSchema);
 const Saved = mongoose.model('Saved', SavedSchema);
 const Message = mongoose.model('Message', MessageSchema);
+const MessageRequest = mongoose.model('MessageRequest', MessageRequestSchema);
 const ChannelMessage = mongoose.model('ChannelMessage', ChannelMessageSchema);
 const Notification = mongoose.model('Notification', NotificationSchema);
 const User = mongoose.model('User', UserSchema);
@@ -664,7 +692,17 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/users', async (req, res) => {
   try {
     const { currentUsername } = req.query;
-    const users = await User.find().select('-password');
+    let users = await User.find().select('-password');
+    // Block filter
+    if (currentUsername) {
+      const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers').lean();
+      const blockedSet = new Set((currentUser?.blockedUsers || []).map(b => b.username));
+      const blockers = await User.find({ 'blockedUsers.username': currentUsername }).select('username').lean();
+      blockers.forEach(b => blockedSet.add(b.username));
+      if (blockedSet.size > 0) {
+        users = users.filter(u => !blockedSet.has(u.username));
+      }
+    }
     const usersDict = {};
     for (const u of users) {
       let hasPendingRequest = false;
@@ -696,7 +734,17 @@ app.get('/api/users/search', async (req, res) => {
       conditions.push({ name: { $regex: term, $options: 'i' } });
     });
     const query = conditions.length > 0 ? { $or: conditions } : {};
-    const users = await User.find(query).select('-password -followRequests').limit(20);
+    let users = await User.find(query).select('-password -followRequests').limit(20);
+    // Block filter
+    if (currentUsername) {
+      const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers').lean();
+      const blockedSet = new Set((currentUser?.blockedUsers || []).map(b => b.username));
+      const blockers = await User.find({ 'blockedUsers.username': currentUsername }).select('username').lean();
+      blockers.forEach(b => blockedSet.add(b.username));
+      if (blockedSet.size > 0) {
+        users = users.filter(u => !blockedSet.has(u.username));
+      }
+    }
     // Attach hasPendingRequest flag for each result
     const enriched = await Promise.all(users.map(async (u) => {
       const userDoc = await User.findOne({ username: u.username }).select('followRequests');
@@ -705,7 +753,6 @@ app.get('/api/users/search', async (req, res) => {
         : false;
       return { ...u.toObject(), hasPendingRequest: !!hasPending };
     }));
-    console.log(`[SEARCH] found ${enriched.length} users`);
     res.json(enriched);
   } catch (err) {
     console.error('[SEARCH] error:', err.message);
@@ -717,8 +764,86 @@ app.get('/api/users/:username', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username }).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
+    const { currentUsername } = req.query;
+    if (currentUsername && currentUsername !== req.params.username) {
+      const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers').lean();
+      const targetUser = await User.findOne({ username: req.params.username }).select('blockedUsers').lean();
+      const currentBlockedTarget = (currentUser?.blockedUsers || []).find(b => b.username === req.params.username);
+      const targetBlockedCurrent = (targetUser?.blockedUsers || []).find(b => b.username === currentUsername);
+      // If current user blocked the target: return limited profile with isBlockedByMe flag
+      if (currentBlockedTarget) {
+        return res.json({
+          username: user.username,
+          name: user.name,
+          isBlockedByMe: true,
+          blockedAt: currentBlockedTarget.blockedAt,
+          profileMutedUsers: user.profileMutedUsers,
+          dmMutedUsers: user.dmMutedUsers,
+          blockedUsers: user.blockedUsers
+        });
+      }
+      // If target blocked current user: return profile silently (no block indication)
+      if (targetBlockedCurrent) {
+        return res.json({
+          username: user.username,
+          name: user.name,
+          bio: user.bio,
+          profilePhoto: user.profilePhoto,
+          photoVisibility: user.photoVisibility,
+          profileMutedUsers: user.profileMutedUsers,
+          dmMutedUsers: user.dmMutedUsers,
+          blockedUsers: user.blockedUsers
+        });
+      }
+    }
+    // Apply profile photo privacy
+    if (currentUsername && currentUsername !== req.params.username) {
+      const photoVis = user.photoVisibility || 'everyone';
+      if (photoVis === 'nobody') {
+        user.profilePhoto = '';
+      } else if (photoVis === 'followers') {
+        const currentUser = await User.findOne({ username: currentUsername }).select('following').lean();
+        const isFollower = currentUser?.following?.includes(req.params.username);
+        if (!isFollower) {
+          user.profilePhoto = '';
+        }
+      }
+    }
     res.json(user);
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PROFILE PHOTO UPLOAD
+app.post('/api/users/:username/photo', async (req, res) => {
+  try {
+    const { image } = req.body;
+    const user = await User.findOneAndUpdate(
+      { username: req.params.username },
+      { $set: { profilePhoto: image || '' } },
+      { new: true }
+    ).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    console.error('Photo upload error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PROFILE PHOTO REMOVE
+app.delete('/api/users/:username/photo', async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { username: req.params.username },
+      { $set: { profilePhoto: '' } },
+      { new: true }
+    ).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    console.error('Photo remove error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -738,6 +863,7 @@ app.put('/api/users/:username', async (req, res) => {
     if (interests !== undefined) updateFields.interests = interests;
     if (feedPreference !== undefined) updateFields.feedPreference = feedPreference;
     if (isPrivate !== undefined) updateFields.isPrivate = isPrivate;
+    if (req.body.photoVisibility !== undefined) updateFields.photoVisibility = req.body.photoVisibility;
 
     console.log(`[UPDATE] fields to set:`, JSON.stringify(updateFields));
 
@@ -813,6 +939,14 @@ app.post('/api/users/:username/follow', async (req, res) => {
     const target = await User.findOne({ username: targetUsername });
 
     if (!user || !target) return res.status(404).json({ message: 'User not found' });
+
+    // BLOCK CHECK: if either user has blocked the other, block the follow
+    const targetBlockedByUser = (user.blockedUsers || []).find(b => b.username === targetUsername);
+    const userBlockedByTarget = (target.blockedUsers || []).find(b => b.username === user.username);
+    if (targetBlockedByUser || userBlockedByTarget) {
+      console.log(`[FOLLOW] blocked: user=${user.username} target=${targetUsername}`);
+      return res.json(user); // Return unchanged user
+    }
 
     // Ensure arrays exist on both
     if (!user.following) user.following = [];
@@ -910,6 +1044,13 @@ app.post('/api/users/:username/follow-requests/accept', async (req, res) => {
 
     if (!user || !requester) return res.status(404).json({ message: 'User not found' });
 
+    // BLOCK CHECK: if either user has blocked the other, reject the accept
+    const userBlocked = (user.blockedUsers || []).find(b => b.username === fromUsername);
+    const requesterBlocked = (requester.blockedUsers || []).find(b => b.username === req.params.username);
+    if (userBlocked || requesterBlocked) {
+      return res.status(403).json({ error: 'Cannot accept follow request from a blocked user' });
+    }
+
     console.log(`[ACCEPT] ${req.params.username} accepting follow request from ${fromUsername}`);
 
     // Remove request, add follower/following, remove the follow_request notification
@@ -970,6 +1111,179 @@ app.post('/api/users/:username/follow-requests/reject', async (req, res) => {
     res.json(updatedUser);
   } catch (err) {
     console.error('Reject follow request error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// BLOCK / MUTE ROUTES
+// BLOCK USER
+app.post('/api/users/:username/block', async (req, res) => {
+  try {
+    const { targetUsername } = req.body;
+    if (!targetUsername || targetUsername === req.params.username) return res.status(400).json({ error: 'Invalid target' });
+    const user = await User.findOne({ username: req.params.username });
+    const target = await User.findOne({ username: targetUsername });
+    if (!user || !target) return res.status(404).json({ error: 'User not found' });
+    if ((user.blockedUsers || []).find(b => b.username === targetUsername)) {
+      return res.json(user);
+    }
+    // Remove from following/followers
+    await User.updateOne({ username: req.params.username }, { $pull: { following: targetUsername } });
+    await User.updateOne({ username: targetUsername }, { $pull: { followers: req.params.username } });
+    await User.updateOne({ username: req.params.username }, { $pull: { followers: targetUsername } });
+    await User.updateOne({ username: targetUsername }, { $pull: { following: req.params.username } });
+    // Add to blocked list
+    await User.updateOne(
+      { username: req.params.username },
+      { $push: { blockedUsers: { username: targetUsername, blockedAt: new Date() } } }
+    );
+    const updated = await User.findOne({ username: req.params.username }).lean();
+    // Remove any follow requests between them
+    await User.updateOne({ username: targetUsername }, { $pull: { followRequests: { fromUsername: req.params.username } } });
+    await User.updateOne({ username: req.params.username }, { $pull: { followRequests: { fromUsername: targetUsername } } });
+    res.json(updated);
+  } catch (err) {
+    console.error('Block error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// UNBLOCK USER
+app.post('/api/users/:username/unblock', async (req, res) => {
+  try {
+    const { targetUsername } = req.body;
+    await User.updateOne(
+      { username: req.params.username },
+      { $pull: { blockedUsers: { username: targetUsername } } }
+    );
+    const updated = await User.findOne({ username: req.params.username }).lean();
+    res.json(updated);
+  } catch (err) {
+    console.error('Unblock error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET BLOCKED USERS
+app.get('/api/users/:username/blocked', async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username }).select('blockedUsers').lean();
+    res.json(user?.blockedUsers || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// CHECK BLOCK STATUS
+app.get('/api/users/:username/block-check/:targetUsername', async (req, res) => {
+  try {
+    const { username, targetUsername } = req.params;
+    const user = await User.findOne({ username }).select('blockedUsers').lean();
+    const blockedByMe = !!(user?.blockedUsers || []).find(b => b.username === targetUsername);
+    res.json({ blockedByMe });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PROFILE MUTE
+app.post('/api/users/:username/profile-mute', async (req, res) => {
+  try {
+    const { targetUsername, duration = 'forever' } = req.body;
+    if (!targetUsername) return res.status(400).json({ error: 'targetUsername required' });
+    let expiresAt = null;
+    if (duration === '8h') expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    else if (duration === '24h') expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    else if (duration === '7d') expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await User.updateOne(
+      { username: req.params.username },
+      { $pull: { profileMutedUsers: { username: targetUsername } } }
+    );
+    await User.updateOne(
+      { username: req.params.username },
+      { $push: { profileMutedUsers: { username: targetUsername, duration, mutedAt: new Date(), expiresAt } } }
+    );
+    const updated = await User.findOne({ username: req.params.username }).lean();
+    res.json(updated);
+  } catch (err) {
+    console.error('Profile mute error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PROFILE UNMUTE
+app.post('/api/users/:username/profile-unmute', async (req, res) => {
+  try {
+    const { targetUsername } = req.body;
+    await User.updateOne(
+      { username: req.params.username },
+      { $pull: { profileMutedUsers: { username: targetUsername } } }
+    );
+    const updated = await User.findOne({ username: req.params.username }).lean();
+    res.json(updated);
+  } catch (err) {
+    console.error('Profile unmute error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET PROFILE MUTED USERS
+app.get('/api/users/:username/profile-muted', async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username }).select('profileMutedUsers').lean();
+    res.json(user?.profileMutedUsers || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DM MUTE
+app.post('/api/users/:username/dm-mute', async (req, res) => {
+  try {
+    const { targetUsername, duration = 'forever' } = req.body;
+    if (!targetUsername) return res.status(400).json({ error: 'targetUsername required' });
+    let expiresAt = null;
+    if (duration === '8h') expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    else if (duration === '24h') expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    else if (duration === '7d') expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await User.updateOne(
+      { username: req.params.username },
+      { $pull: { dmMutedUsers: { username: targetUsername } } }
+    );
+    await User.updateOne(
+      { username: req.params.username },
+      { $push: { dmMutedUsers: { username: targetUsername, duration, mutedAt: new Date(), expiresAt } } }
+    );
+    const updated = await User.findOne({ username: req.params.username }).lean();
+    res.json(updated);
+  } catch (err) {
+    console.error('DM mute error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DM UNMUTE
+app.post('/api/users/:username/dm-unmute', async (req, res) => {
+  try {
+    const { targetUsername } = req.body;
+    await User.updateOne(
+      { username: req.params.username },
+      { $pull: { dmMutedUsers: { username: targetUsername } } }
+    );
+    const updated = await User.findOne({ username: req.params.username }).lean();
+    res.json(updated);
+  } catch (err) {
+    console.error('DM unmute error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET DM-MUTED USERS
+app.get('/api/users/:username/dm-muted', async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username }).select('dmMutedUsers').lean();
+    res.json(user?.dmMutedUsers || []);
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -1035,17 +1349,55 @@ app.delete('/api/users/:username/search/recent', async (req, res) => {
   }
 });
 
+// ACCEPT MESSAGES FROM NON-FOLLOWER
+app.post('/api/users/:username/accept-messages', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { targetUsername } = req.body;
+    if (!targetUsername) return res.status(400).json({ error: 'targetUsername required' });
+    await User.updateOne(
+      { username },
+      { $pull: { acceptedConversations: { partner: targetUsername } } }
+    );
+    await User.updateOne(
+      { username },
+      { $push: { acceptedConversations: { partner: targetUsername, acceptedAt: new Date() } } }
+    );
+    const updated = await User.findOne({ username }).select('acceptedConversations').lean();
+    res.json(updated?.acceptedConversations || []);
+  } catch (err) {
+    console.error('Accept messages error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // MESSAGE ROUTES
 app.get('/api/messages/:user1/:user2', async (req, res) => {
   try {
     const { user1, user2 } = req.params;
+    // BLOCK CHECK
+    const user1Doc = await User.findOne({ username: user1 }).select('blockedUsers').lean();
+    const user2Doc = await User.findOne({ username: user2 }).select('blockedUsers').lean();
+    const u1Blocked = (user1Doc?.blockedUsers || []).find(b => b.username === user2);
+    const u2Blocked = (user2Doc?.blockedUsers || []).find(b => b.username === user1);
+    if (u1Blocked || u2Blocked) {
+      return res.json([]);
+    }
+    // Fetch messages
     const messages = await Message.find({
       $or: [
         { sender: user1, receiver: user2 },
         { sender: user2, receiver: user1 }
       ]
     }).sort({ timestamp: 1 });
-    res.json(messages);
+    // Check if viewer (user1) needs to accept messages from partner (user2)
+    const partnerDoc = await User.findOne({ username: user2 }).select('following').lean();
+    const viewerDoc = await User.findOne({ username: user1 }).select('following acceptedConversations').lean();
+    const viewerFollows = viewerDoc?.following?.includes(user2);
+    const partnerFollows = partnerDoc?.following?.includes(user1);
+    const viewerAccepted = (viewerDoc?.acceptedConversations || []).some(a => a.partner === user2);
+    const needsAcceptance = !viewerFollows && !partnerFollows && !viewerAccepted;
+    res.json({ messages, needsAcceptance });
   } catch (err) {
     console.error('Messages fetch error:', err);
     res.status(500).json({ error: err.message });
@@ -1055,9 +1407,34 @@ app.get('/api/messages/:user1/:user2', async (req, res) => {
 app.post('/api/messages', async (req, res) => {
   try {
     const { sender, receiver, content, image } = req.body;
+    // BLOCK CHECK + DM MUTE CHECK
+    const senderUser = await User.findOne({ username: sender }).select('blockedUsers following followers dmMutedUsers').lean();
+    const receiverUser = await User.findOne({ username: receiver }).select('blockedUsers following followers dmMutedUsers').lean();
+    const senderBlocked = (senderUser?.blockedUsers || []).find(b => b.username === receiver);
+    const receiverBlocked = (receiverUser?.blockedUsers || []).find(b => b.username === sender);
+    if (senderBlocked || receiverBlocked) {
+      return res.status(403).json({ error: 'Message could not be sent' });
+    }
+    // Always create Message (mute NEVER blocks delivery)
     const message = new Message({ sender, receiver, content: content || '', image: image || null });
     await message.save();
-    res.json(message);
+    // DM MUTE CHECK: if receiver has dm-muted sender, suppress notification only
+    const dmMuted = (receiverUser?.dmMutedUsers || []).find(m => m.username === sender);
+    const isDmMuted = dmMuted && (dmMuted.duration === 'forever' || (dmMuted.expiresAt && new Date(dmMuted.expiresAt) > new Date()));
+    if (!isDmMuted) {
+      const notif = {
+        type: 'message',
+        fromUser: sender,
+        username: receiver,
+        createdAt: new Date(),
+        isRead: false
+      };
+      await User.updateOne(
+        { username: receiver },
+        { $push: { notifications: { $each: [notif], $position: 0 } } }
+      );
+    }
+    res.json({ type: 'message', data: message });
   } catch (err) {
     console.error('Send message error:', err);
     res.status(500).json({ error: err.message });
@@ -1099,7 +1476,7 @@ app.get('/api/conversations/:username', async (req, res) => {
           let: { partner: '$_id.partner' },
           pipeline: [
             { $match: { $expr: { $eq: ['$username', '$$partner'] } } },
-            { $project: { username: 1, bio: 1 } }
+            { $project: { username: 1, name: 1, bio: 1, profilePhoto: 1 } }
           ],
           as: 'partnerInfo'
         }
@@ -1115,7 +1492,36 @@ app.get('/api/conversations/:username', async (req, res) => {
         }
       }
     ]);
-    res.json(conversations);
+    // BLOCK FILTER + DM MUTE INFO
+    const currentUserDoc = await User.findOne({ username }).select('blockedUsers dmMutedUsers').lean();
+    const blockedSet = new Set((currentUserDoc?.blockedUsers || []).map(b => b.username));
+    // Also find users who blocked currentUser
+    const blockers = await User.find({ 'blockedUsers.username': username }).select('username').lean();
+    blockers.forEach(b => blockedSet.add(b.username));
+    // Build dm-muted set (non-expired)
+    const dmMutedSet = new Set();
+    for (const m of (currentUserDoc?.dmMutedUsers || [])) {
+      if (m.duration === 'forever' || (m.expiresAt && new Date(m.expiresAt) > new Date())) {
+        dmMutedSet.add(m.username);
+      }
+    }
+    let filtered = conversations.filter(c => !blockedSet.has(c.partner));
+    // Attach needsAcceptance + dmMuted flags
+    const currentFullUser = await User.findOne({ username }).select('following acceptedConversations').lean();
+    const partnerNames = filtered.map(c => c.partner);
+    const partners = await User.find({ username: { $in: partnerNames } }).select('username following').lean();
+    const partnerFollowMap = {};
+    for (const p of partners) {
+      partnerFollowMap[p.username] = (p.following || []).includes(username);
+    }
+    filtered = filtered.map(c => {
+      const viewFollows = currentFullUser?.following?.includes(c.partner);
+      const partnerFollows = partnerFollowMap[c.partner] || false;
+      const viewerAccepted = (currentFullUser?.acceptedConversations || []).some(a => a.partner === c.partner);
+      const needsAcceptance = !viewFollows && !partnerFollows && !viewerAccepted;
+      return { ...c, dmMuted: dmMutedSet.has(c.partner), needsAcceptance };
+    });
+    res.json(filtered);
   } catch (err) {
     console.error('Conversations error:', err);
     res.status(500).json({ error: err.message });
@@ -1163,6 +1569,27 @@ app.get('/api/posts', async (req, res) => {
       if (removed > 0) console.log(`[PRIVACY] filtered out ${removed} private posts from feed for ${currentUsername}`);
     }
 
+    // BLOCK FILTER + PROFILE MUTE FILTER
+    if (currentUsername) {
+      const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers profileMutedUsers').lean();
+      // Block filter: both directions
+      const blockedUsernames = (currentUser?.blockedUsers || []).map(b => b.username);
+      const blockers = await User.find({ 'blockedUsers.username': currentUsername }).select('username').lean();
+      const blockerUsernames = blockers.map(b => b.username);
+      const allBlocked = new Set([...blockedUsernames, ...blockerUsernames]);
+      // Profile mute filter: hide posts from profile-muted users
+      const mutedUsernames = new Set();
+      for (const m of (currentUser?.profileMutedUsers || [])) {
+        if (m.duration === 'forever' || (m.expiresAt && new Date(m.expiresAt) > new Date())) {
+          mutedUsernames.add(m.username);
+        }
+      }
+      const hidden = new Set([...allBlocked, ...mutedUsernames]);
+      if (hidden.size > 0) {
+        allContent = allContent.filter(item => !hidden.has(item.username));
+      }
+    }
+
     res.json(allContent);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1185,6 +1612,45 @@ app.post('/api/posts', async (req, res) => {
       { $push: { posts: post._id } }
     );
     const populatedPost = await Post.findById(post._id).lean();
+
+    // FRIEND POST NOTIFICATION: notify all followers (except those who profile-muted the author)
+    if (type !== 'discussion') {
+      const authorUser = await User.findOne({ username }).select('followers profileMutedUsers').lean();
+      if (authorUser?.followers?.length > 0) {
+        const allFollowers = await User.find({ username: { $in: authorUser.followers } })
+          .select('username profileMutedUsers notifications')
+          .lean();
+        for (const follower of allFollowers) {
+          // Skip if follower has profile-muted the author
+          const muteEntry = (follower.profileMutedUsers || []).find(m => m.username === username);
+          if (muteEntry) {
+            if (muteEntry.duration !== 'forever' && muteEntry.expiresAt && new Date(muteEntry.expiresAt) > new Date()) {
+              continue; // Still muted
+            }
+            if (muteEntry.duration === 'forever') continue;
+          }
+          await User.updateOne(
+            { username: follower.username },
+            {
+              $push: {
+                notifications: {
+                  $each: [{
+                    type: 'post',
+                    fromUser: username,
+                    postId: post._id,
+                    username: follower.username,
+                    createdAt: new Date(),
+                    isRead: false
+                  }],
+                  $position: 0
+                }
+              }
+            }
+          );
+        }
+      }
+    }
+
     res.json(populatedPost);
   } catch (err) {
     console.error('Post creation error:', err);
@@ -1195,9 +1661,28 @@ app.post('/api/posts', async (req, res) => {
 // GET DISCUSSION POSTS
 app.get('/api/posts/discussions', async (req, res) => {
   try {
-    const discussions = await Post.find({ type: 'discussion' })
+    const { currentUsername } = req.query;
+    let discussions = await Post.find({ type: 'discussion' })
       .sort({ createdAt: -1 })
       .lean();
+    // Block + profile mute filter
+    if (currentUsername) {
+      const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers profileMutedUsers').lean();
+      const blockedUsernames = (currentUser?.blockedUsers || []).map(b => b.username);
+      const blockers = await User.find({ 'blockedUsers.username': currentUsername }).select('username').lean();
+      const blockerUsernames = blockers.map(b => b.username);
+      const allBlocked = new Set([...blockedUsernames, ...blockerUsernames]);
+      const mutedUsernames = new Set();
+      for (const m of (currentUser?.profileMutedUsers || [])) {
+        if (m.duration === 'forever' || (m.expiresAt && new Date(m.expiresAt) > new Date())) {
+          mutedUsernames.add(m.username);
+        }
+      }
+      const hidden = new Set([...allBlocked, ...mutedUsernames]);
+      if (hidden.size > 0) {
+        discussions = discussions.filter(d => !hidden.has(d.username));
+      }
+    }
     res.json(discussions);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1708,7 +2193,15 @@ app.get('/api/users/:username/notifications', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username }).lean();
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user.notifications || []);
+    let notifications = user.notifications || [];
+    // Filter out notifications from blocked users
+    const blockedSet = new Set((user.blockedUsers || []).map(b => b.username));
+    const blockers = await User.find({ 'blockedUsers.username': req.params.username }).select('username').lean();
+    blockers.forEach(b => blockedSet.add(b.username));
+    if (blockedSet.size > 0) {
+      notifications = notifications.filter(n => !blockedSet.has(n.fromUser));
+    }
+    res.json(notifications);
   } catch (err) {
     console.error('Get notifications error:', err);
     res.status(500).json({ error: err.message });
@@ -2123,9 +2616,20 @@ app.post('/api/stories', async (req, res) => {
 app.get('/api/stories', async (req, res) => {
   try {
     const now = new Date();
-    const stories = await Story.find({ expiresAt: { $gt: now } })
+    const { currentUsername } = req.query;
+    let stories = await Story.find({ expiresAt: { $gt: now } })
       .sort({ createdAt: -1 })
       .lean();
+    // BLOCK FILTER
+    if (currentUsername) {
+      const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers').lean();
+      const blockedSet = new Set((currentUser?.blockedUsers || []).map(b => b.username));
+      const blockers = await User.find({ 'blockedUsers.username': currentUsername }).select('username').lean();
+      blockers.forEach(b => blockedSet.add(b.username));
+      if (blockedSet.size > 0) {
+        stories = stories.filter(s => !blockedSet.has(s.author));
+      }
+    }
     res.json(stories);
   } catch (err) {
     res.status(500).json({ error: err.message });

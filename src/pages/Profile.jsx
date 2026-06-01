@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Heart, MessageCircle, Plus, Lock, MoreHorizontal, Users, ShieldAlert, MapPin } from 'lucide-react';
+import { Heart, MessageCircle, Plus, Lock, MoreHorizontal, Users, ShieldAlert, MapPin, BellOff, Ban, Check } from 'lucide-react';
 import PostModal from '../components/PostModal';
 import PostViewer from '../components/PostViewer';
 import Avatar from '../components/Avatar';
@@ -22,6 +22,11 @@ export default function Profile() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [menuPostId, setMenuPostId] = useState(null);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [showActionMenu, setShowActionMenu] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [showMuteOptions, setShowMuteOptions] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [isProfileMuted, setIsProfileMuted] = useState(false);
 
   const handleDeletePost = async () => {
     if (!deleteTargetId) return;
@@ -45,6 +50,104 @@ export default function Profile() {
     }
   };
 
+  // Check block/mute status when viewing another user
+  useEffect(() => {
+    if (!isOwnProfile && profileUsername && user) {
+      fetch(`/api/users/${user.username}/block-check/${profileUsername}`)
+        .then(res => res.ok ? res.json() : {})
+        .then(data => {
+          setIsBlocked(data.blockedByMe || false);
+        })
+        .catch(() => {});
+      // Check if profile muted
+      fetch(`/api/users/${user.username}/profile-muted`)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => {
+          setIsProfileMuted(!!data.find(m => m.username === profileUsername));
+        })
+        .catch(() => {});
+    }
+  }, [isOwnProfile, profileUsername, user]);
+
+  const handleBlockUser = async () => {
+    if (!user || !profileUsername) return;
+    try {
+      const res = await fetch(`/api/users/${user.username}/block`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUsername: profileUsername })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        updateUser(updatedUser);
+        setIsBlocked(true);
+        setShowBlockConfirm(false);
+        setShowActionMenu(false);
+      }
+    } catch (err) {
+      console.error('Block error:', err);
+    }
+  };
+
+  const handleUnblockUser = async () => {
+    if (!user || !profileUsername) return;
+    try {
+      const res = await fetch(`/api/users/${user.username}/unblock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUsername: profileUsername })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        updateUser(updatedUser);
+        setIsBlocked(false);
+        setShowActionMenu(false);
+        fetchProfileData();
+      }
+    } catch (err) {
+      console.error('Unblock error:', err);
+    }
+  };
+
+  const handleProfileMute = async (duration) => {
+    if (!user || !profileUsername) return;
+    try {
+      const res = await fetch(`/api/users/${user.username}/profile-mute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUsername: profileUsername, duration })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        updateUser(updatedUser);
+        setIsProfileMuted(true);
+        setShowMuteOptions(false);
+        setShowActionMenu(false);
+      }
+    } catch (err) {
+      console.error('Profile mute error:', err);
+    }
+  };
+
+  const handleProfileUnmute = async () => {
+    if (!user || !profileUsername) return;
+    try {
+      const res = await fetch(`/api/users/${user.username}/profile-unmute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUsername: profileUsername })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        updateUser(updatedUser);
+        setIsProfileMuted(false);
+        setShowActionMenu(false);
+      }
+    } catch (err) {
+      console.error('Profile unmute error:', err);
+    }
+  };
+
   const handlePostUpdate = useCallback((updatedPost) => {
     setUserPosts(prevPosts =>
       prevPosts.map(p => p._id === updatedPost._id ? updatedPost : p)
@@ -55,10 +158,15 @@ export default function Profile() {
   const fetchProfileData = async () => {
     try {
       if (!isOwnProfile) {
-        const userRes = await fetch(`/api/users/${profileUsername}`);
+        const userRes = await fetch(`/api/users/${profileUsername}?currentUsername=${user?.username}`);
         if (userRes.ok) {
           const fetchedUser = await userRes.json();
-          setProfileUser(fetchedUser);
+          if (fetchedUser.isBlockedByMe) {
+            setIsBlocked(true);
+            setProfileUser(fetchedUser);
+          } else {
+            setProfileUser(fetchedUser);
+          }
         }
       } else {
         setProfileUser(user);
@@ -81,7 +189,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (!isOwnProfile && profileUser && user) {
-      fetch('/api/users')
+      fetch(`/api/users?currentUsername=${user.username}`)
         .then(res => res.json())
         .then(usersDict => {
           const allUsers = Object.values(usersDict);
@@ -126,6 +234,28 @@ export default function Profile() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', paddingBottom: '100px' }}>
+      {isBlocked && !isOwnProfile ? (
+        <div style={{ maxWidth: '720px', margin: '0 auto', padding: '0 16px', position: 'relative', zIndex: 5 }}>
+          <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '24px', textAlign: 'center', marginTop: '24px' }}>
+            <Avatar username={profileUsername} image={profileUser?.profilePhoto} size={72} style={{ margin: '0 auto 16px', border: '2px solid var(--border-color)' }} />
+            <h3 style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-color)', margin: '0 0 4px' }}>{profileUser.name || profileUsername}</h3>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px' }}>@{profileUsername}</div>
+            <div style={{ padding: '10px 16px', backgroundColor: 'var(--hover-bg)', borderRadius: '10px', marginBottom: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <Ban size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+              You have blocked this user.
+              {profileUser.blockedAt && (
+                <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                  Blocked {new Date(profileUser.blockedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </div>
+              )}
+            </div>
+            <button onClick={handleUnblockUser} style={{ padding: '8px 24px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>
+              Unblock @{profileUsername}
+            </button>
+          </div>
+        </div>
+      ) : (
+      <>
       {/* Flat header area */}
       <div style={{ height: '100px', backgroundColor: 'var(--surface-alt)', borderBottom: '1px solid var(--border-color)' }} />
 
@@ -137,7 +267,7 @@ export default function Profile() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
             <div style={{ marginTop: '-52px' }}>
               <div style={{ borderRadius: '50%', padding: '3px', backgroundColor: 'var(--card-bg)', display: 'inline-block' }}>
-                <Avatar username={profileUser?.username} size={72} style={{ border: '2px solid var(--border-color)' }} />
+                <Avatar username={profileUser?.username} image={profileUser?.profilePhoto} size={72} style={{ border: '2px solid var(--border-color)' }} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -154,9 +284,69 @@ export default function Profile() {
                   </button>
                 </>
               ) : (
-                <button onClick={() => handleFollow(profileUsername)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: isFollowing || hasPendingRequest ? '1px solid var(--border-color)' : 'none', backgroundColor: isFollowing || hasPendingRequest ? 'transparent' : 'var(--primary-color)', color: isFollowing || hasPendingRequest ? 'var(--text-secondary)' : '#fff', cursor: 'pointer', transition: 'background-color 0.15s' }}>
-                  {isFollowing ? 'Following' : (hasPendingRequest ? 'Requested' : 'Follow')}
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {isBlocked ? (
+                    <span style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', color: 'var(--text-tertiary)' }}>Blocked</span>
+                  ) : (
+                    <>
+                      <button onClick={() => handleFollow(profileUsername)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: isFollowing || hasPendingRequest ? '1px solid var(--border-color)' : 'none', backgroundColor: isFollowing || hasPendingRequest ? 'transparent' : 'var(--primary-color)', color: isFollowing || hasPendingRequest ? 'var(--text-secondary)' : '#fff', cursor: 'pointer', transition: 'background-color 0.15s' }}>
+                        {isFollowing ? 'Following' : (hasPendingRequest ? 'Requested' : 'Follow')}
+                      </button>
+                      <button onClick={() => navigate(`/messages/${profileUsername}`)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>
+                        Message
+                      </button>
+                    </>
+                  )}
+                  <div style={{ position: 'relative' }}>
+                    <button onClick={() => setShowActionMenu(!showActionMenu)}
+                      style={{ background: 'none', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '6px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <MoreHorizontal size={16} />
+                    </button>
+                    {showActionMenu && (
+                      <>
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => { setShowActionMenu(false); setShowMuteOptions(false); }} />
+                        <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: '180px', overflow: 'hidden', marginTop: '4px' }}>
+                          {isProfileMuted ? (
+                            <button onClick={handleProfileUnmute}
+                              style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <BellOff size={14} /> Unmute Profile
+                            </button>
+                          ) : (
+                            <button onClick={() => setShowMuteOptions(true)}
+                              style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <BellOff size={14} /> Mute Profile
+                            </button>
+                          )}
+                          {isBlocked ? (
+                            <button onClick={handleUnblockUser}
+                              style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-color)' }}>
+                              <Ban size={14} /> Unblock @{profileUsername}
+                            </button>
+                          ) : (
+                            <button onClick={() => { setShowActionMenu(false); setShowBlockConfirm(true); }}
+                              style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-color)' }}>
+                              <Ban size={14} /> Block @{profileUsername}
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                    {/* Mute duration submenu */}
+                    {showMuteOptions && (
+                      <>
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 52 }} onClick={() => setShowMuteOptions(false)} />
+                        <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 53, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: '180px', overflow: 'hidden', marginTop: '4px' }}>
+                          {['8h', '24h', '7d', 'forever'].map(dur => (
+                            <button key={dur} onClick={() => handleProfileMute(dur)}
+                              style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <BellOff size={14} /> {dur === '8h' ? '8 hours' : dur === '24h' ? '24 hours' : dur === '7d' ? '7 days' : 'Forever'}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -191,7 +381,7 @@ export default function Profile() {
               <div style={{ display: 'flex', position: 'relative', height: '22px' }}>
                 {mutuals.slice(0, 3).map((m, idx) => (
                   <div key={idx} style={{ marginLeft: idx > 0 ? '-10px' : 0, borderRadius: '50%', overflow: 'hidden', zIndex: 3 - idx }}>
-                    <Avatar username={m.username} size={22} />
+                    <Avatar username={m.username} image={m.profilePhoto} size={22} />
                   </div>
                 ))}
               </div>
@@ -332,6 +522,20 @@ export default function Profile() {
           onConfirm={() => handleDeletePost()}
           onCancel={() => setDeleteTargetId(null)}
         />
+      )}
+
+      {showBlockConfirm && (
+        <ConfirmModal
+          isOpen={true}
+          title={`Block @${profileUsername}?`}
+          message={`They will no longer be able to view your profile, posts, stories, or contact you.`}
+          confirmLabel="Block"
+          cancelLabel="Cancel"
+          onConfirm={handleBlockUser}
+          onCancel={() => setShowBlockConfirm(false)}
+        />
+      )}
+      </>
       )}
     </div>
   );

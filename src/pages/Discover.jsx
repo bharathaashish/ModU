@@ -289,7 +289,7 @@ export default function Discover() {
                         style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', backgroundColor: 'var(--bg-color)', transition: 'background-color 0.2s' }}
                         onClick={() => navigate(`/profile/${u.username}`)}
                       >
-                        <Avatar username={u.username} size={40} />
+                        <Avatar username={u.username} image={u.profilePhoto} size={40} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)' }}>{u.name || u.username}</div>
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>@{u.username} · {u.interests?.length || 0} interests</div>
@@ -361,7 +361,7 @@ export default function Discover() {
               <div className="scroll-row">
                 {suggestedUsers.map(u => (
                   <div key={u._id || u.username} className="scroll-card" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${u.username}`); }}>
-                    <Avatar username={u.username} size={56} />
+                    <Avatar username={u.username} image={u.profilePhoto} size={56} />
                     <div style={{ textAlign: 'center', width: '100%', overflow: 'hidden' }}>
                       <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name || u.username}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.interests?.slice(0, 1).join(', ') || 'New here'}</div>

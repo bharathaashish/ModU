@@ -70,7 +70,7 @@ export default function Followers() {
         ) : (
           followersList.map((member) => (
             <div key={member.username} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', backgroundColor: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer' }} onClick={() => navigate(`/profile/${member.username}`)}>
-              <Avatar username={member?.username} size={48} onClick={() => navigate(`/profile/${member?.username}`)} />
+              <Avatar username={member?.username} image={member?.profilePhoto} size={48} onClick={() => navigate(`/profile/${member?.username}`)} />
               <div style={{ flex: 1 }}>
                 {member.name && <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>{member.name}</div>}
                 <div style={{ fontWeight: 600, color: 'var(--text-color)' }}>{member.username}</div>

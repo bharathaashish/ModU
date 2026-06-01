@@ -84,14 +84,14 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const updateUserProfile = async ({ username: newUsername, name, email, age, phone, bio }) => {
+  const updateUserProfile = async ({ username: newUsername, name, email, age, phone, bio, photoVisibility }) => {
     if (!user) return { success: false, message: 'Not logged in' };
     
     try {
       const res = await fetch(`/api/users/${user.username}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: newUsername, name, email, age, phone, bio })
+        body: JSON.stringify({ username: newUsername, name, email, age, phone, bio, photoVisibility })
       });
       const data = await res.json();
       if (!res.ok) return { success: false, message: data.message || 'Error updating profile' };

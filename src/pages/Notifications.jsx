@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Heart, UserPlus, Bell, UserCheck, X } from 'lucide-react';
+import { Heart, UserPlus, Bell, UserCheck, X, FileText, MessageCircle, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '../components/Avatar';
 
@@ -8,6 +8,7 @@ export default function Notifications() {
   const { user, updateUser, refreshNotifications } = useAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
+  const [filteredNotifs, setFilteredNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState({});
 
@@ -29,6 +30,22 @@ export default function Notifications() {
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
+
+  // Filter notifications from blocked users and check DM mutes
+  useEffect(() => {
+    const filter = async () => {
+      if (!user || notifications.length === 0) { setFilteredNotifs(notifications); return; }
+      try {
+        const res = await fetch(`/api/users/${user.username}/blocked`);
+        const blocked = res.ok ? await res.json() : [];
+        const blockedSet = new Set(blocked.map(b => b.username));
+        setFilteredNotifs(notifications.filter(n => !blockedSet.has(n.fromUser)));
+      } catch {
+        setFilteredNotifs(notifications);
+      }
+    };
+    filter();
+  }, [notifications, user]);
 
   const markAsRead = useCallback(async () => {
     if (!user) return;
@@ -102,6 +119,10 @@ export default function Notifications() {
         return <UserPlus size={16} color="var(--primary-color)" />;
       case 'follow_request':
         return <UserPlus size={16} color="#f58529" />;
+      case 'post':
+        return <FileText size={16} color="var(--primary-color)" />;
+      case 'message':
+        return <MessageCircle size={16} color="var(--primary-color)" />;
       default:
         return <Bell size={16} color="var(--text-secondary)" />;
     }
@@ -135,17 +156,17 @@ export default function Notifications() {
           <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-color)', margin: 0 }}>Notifications</h2>
         </div>
 
-        {notifications.length === 0 ? (
+        {filteredNotifs.length === 0 ? (
           <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '64px 20px' }}>
             <div style={{ width: '64px', height: '64px', borderRadius: '50%', border: '2px solid var(--text-color)', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '0 auto 24px' }}>
               <Bell size={32} color="var(--text-color)" />
             </div>
             <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-color)', marginBottom: '8px' }}>No notifications yet</h3>
-            <p style={{ fontSize: '14px', maxWidth: '280px', margin: '0 auto' }}>When someone likes your post or follows you, you'll see it here.</p>
+            <p style={{ fontSize: '14px', maxWidth: '280px', margin: '0 auto' }}>When someone likes your post, follows you, or sends you a message, you'll see it here.</p>
           </div>
         ) : (
           <div style={{ width: '100%' }}>
-            {notifications.map((notification, idx) => (
+            {filteredNotifs.map((notification, idx) => (
               <div 
                 key={notification._id || idx}
                 style={{ 
@@ -155,16 +176,24 @@ export default function Notifications() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
+                  cursor: notification.type === 'post' ? 'pointer' : 'default'
+                }}
+                onClick={() => {
+                  if (notification.type === 'post' && notification.postId) {
+                    navigate(`/post/${notification.postId}`);
+                  }
                 }}
               >
                 <Avatar username={notification?.fromUser} size={40} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: '14px', color: 'var(--text-color)', margin: 0 }}>
-                    <span style={{ fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate(`/profile/${notification.fromUser}`)}>{notification.fromUser}</span>{' '}
+                    <span style={{ fontWeight: 600, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); navigate(`/profile/${notification.fromUser}`); }}>{notification.fromUser}</span>{' '}
                     {notification.type === 'like' && 'liked your post'}
                     {notification.type === 'follow' && 'started following you'}
                     {notification.type === 'follow_request' && 'requested to follow you'}
                     {notification.type === 'comment' && 'commented on your post'}
+                    {notification.type === 'post' && (notification.postId ? 'shared a new post' : 'shared a new update')}
+                    {notification.type === 'message' && 'sent you a message'}
                   </p>
                   <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
                     {formatTime(notification.createdAt)}

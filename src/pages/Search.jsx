@@ -238,7 +238,7 @@ export default function Search() {
                     borderBottom: i < results.length - 1 ? '1px solid var(--border-color)' : 'none'
                   }}
                 >
-                  <Avatar username={u?.username} size={44} onClick={() => navigate(`/profile/${u?.username}`)} />
+                  <Avatar username={u?.username} image={u?.profilePhoto} size={44} onClick={() => navigate(`/profile/${u?.username}`)} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, color: 'var(--text-color)', fontSize: '14px' }}>{u.username}</div>
                   </div>

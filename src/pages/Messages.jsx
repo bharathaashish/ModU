@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Avatar from '../components/Avatar';
-import { ArrowLeft, Send, MessageCircle, Users, LogOut, Globe, Lock, Image, X, Search, ChevronRight, Clock } from 'lucide-react';
+import { ArrowLeft, Send, MessageCircle, Image, X, MoreVertical, BellOff, Ban, User, Check, Users, Globe, Lock, LogOut, ChevronRight } from 'lucide-react';
 
 const timeAgo = (date) => {
   const diff = Date.now() - new Date(date).getTime();
@@ -25,6 +25,8 @@ export default function Messages() {
   const { user } = useAuth();
 
   const [messages, setMessages] = useState([]);
+  const [needsAcceptance, setNeedsAcceptance] = useState(false);
+  const [acceptanceDone, setAcceptanceDone] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [targetUser, setTargetUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -34,10 +36,16 @@ export default function Messages() {
   const fileInputRef = useRef(null);
   const [conversations, setConversations] = useState([]);
   const [conversationsLoading, setConversationsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('chats');
+  const [showConvOptions, setShowConvOptions] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isDmMuted, setIsDmMuted] = useState(false);
+  const [showDmMuteOptions, setShowDmMuteOptions] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
   const [joinedCommunities, setJoinedCommunities] = useState([]);
   const [joinedLoading, setJoinedLoading] = useState(false);
   const [leavingId, setLeavingId] = useState(null);
+  const [activeTab, setActiveTab] = useState('inbox');
   const messagesEndRef = useRef(null);
 
   const selectedUser = username || location.state?.selectedUser || null;
@@ -72,9 +80,27 @@ export default function Messages() {
         .then(data => { setTargetUser(data); setTargetLoading(false); })
         .catch(() => setTargetLoading(false));
 
+      fetch(`/api/users/${user.username}/block-check/${selectedUser}`)
+        .then(res => res.ok ? res.json() : {})
+        .then(data => setIsBlocked(data.blockedByMe || false))
+        .catch(() => {});
+
       fetch(`/api/messages/${user.username}/${selectedUser}`)
         .then(res => res.json())
-        .then(setMessages)
+        .then(data => {
+          if (data && Array.isArray(data.messages)) {
+            setMessages(data.messages);
+            setNeedsAcceptance(data.needsAcceptance);
+            setAcceptanceDone(false);
+          }
+        })
+        .catch(() => {});
+
+      fetch(`/api/users/${user.username}/dm-muted`)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => {
+          setIsDmMuted(!!data.find(m => m.username === selectedUser));
+        })
         .catch(() => {});
     }
   }, [selectedUser, user]);
@@ -102,15 +128,48 @@ export default function Messages() {
         body: JSON.stringify({ sender: user.username, receiver: selectedUser, content: newMessage.trim(), image: dmImage })
       });
       if (res.ok) {
-        const message = await res.json();
-        setMessages(prev => [...prev, message]);
+        const result = await res.json();
+        setMessages(prev => [...prev, result.data]);
         setNewMessage('');
         setDmImage(null);
         setDmPreview('');
         if (fileInputRef.current) fileInputRef.current.value = '';
+      } else {
+        setErrorMsg('Message could not be delivered.');
+        setTimeout(() => setErrorMsg(''), 3000);
+      }
+    } catch {
+      setErrorMsg('Message could not be delivered.');
+      setTimeout(() => setErrorMsg(''), 3000);
+    }
+    setLoading(false);
+  };
+
+  const keyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const handleAcceptMessages = async () => {
+    if (!user || !selectedUser) return;
+    try {
+      const res = await fetch(`/api/users/${user.username}/accept-messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUsername: selectedUser })
+      });
+      if (res.ok) {
+        setNeedsAcceptance(false);
+        setAcceptanceDone(true);
       }
     } catch {}
-    setLoading(false);
+  };
+
+  const handleIgnore = () => {
+    setNeedsAcceptance(false);
+    setAcceptanceDone(true);
   };
 
   const handleLeave = async (communityId) => {
@@ -128,13 +187,6 @@ export default function Messages() {
     setLeavingId(null);
   };
 
-  const keyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
   if (!user) {
     return <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-secondary)' }}>Please log in</div>;
   }
@@ -142,31 +194,129 @@ export default function Messages() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', paddingBottom: '100px' }}>
       {selectedUser ? (
-        /* === ACTIVE CHAT VIEW — PREMIUM LAYOUT === */
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', maxWidth: '720px', margin: '0 auto', width: '100%' }}>
-          {/* Chat header with profile card feel */}
+          {/* Chat header */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'var(--card-bg)' }}>
             <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', color: 'var(--text-color)' }}>
               <ArrowLeft size={22} />
             </button>
-            <Avatar username={selectedUser} size={42} />
+            <Avatar username={selectedUser} image={targetUser?.profilePhoto} size={42} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)' }}>
+              <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {targetLoading ? 'Loading...' : targetUser?.name || targetUser?.username || selectedUser}
+                {isDmMuted && <BellOff size={12} color="var(--text-tertiary)" />}
               </div>
               {targetUser?.name && targetUser?.username !== targetUser?.name && (
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>@{targetUser.username}</div>
               )}
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Clock size={12} />
-              {messages.length > 0 && (Date.now() - new Date(messages[messages.length - 1].timestamp).getTime() < 300000) ? 'Active now' : 'Offline'}
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setShowConvOptions(!showConvOptions)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: 'var(--text-secondary)', display: 'flex', borderRadius: '8px' }}>
+                <MoreVertical size={20} />
+              </button>
+              {showConvOptions && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => { setShowConvOptions(false); setShowDmMuteOptions(false); }} />
+                  <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: '200px', overflow: 'hidden', marginTop: '4px' }}>
+                    <button onClick={() => { setShowConvOptions(false); navigate(`/profile/${selectedUser}`); }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <User size={14} /> View Profile
+                    </button>
+                    <div style={{ height: '1px', backgroundColor: 'var(--border-color)' }} />
+                    {isDmMuted ? (
+                      <button onClick={async () => {
+                        const res = await fetch(`/api/users/${user.username}/dm-unmute`, {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ targetUsername: selectedUser })
+                        });
+                        if (res.ok) { setIsDmMuted(false); setShowConvOptions(false); }
+                      }}
+                        style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <BellOff size={14} /> Unmute Notifications
+                      </button>
+                    ) : (
+                      <button onClick={() => setShowDmMuteOptions(true)}
+                        style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <BellOff size={14} /> Mute Notifications
+                      </button>
+                    )}
+                    <div style={{ height: '1px', backgroundColor: 'var(--border-color)' }} />
+                    {isBlocked ? (
+                      <button onClick={async () => {
+                        const res = await fetch(`/api/users/${user.username}/unblock`, {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ targetUsername: selectedUser })
+                        });
+                        if (res.ok) { setIsBlocked(false); setShowConvOptions(false); }
+                      }}
+                        style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Ban size={14} /> Unblock @{selectedUser}
+                      </button>
+                    ) : (
+                      <button onClick={() => { setShowConvOptions(false); setShowBlockConfirm(true); }}
+                        style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Ban size={14} /> Block @{selectedUser}
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+              {showDmMuteOptions && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 52 }} onClick={() => setShowDmMuteOptions(false)} />
+                  <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 53, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: '200px', overflow: 'hidden', marginTop: '4px' }}>
+                    <div style={{ padding: '8px 14px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>Mute for</div>
+                    {['8h', '24h', '7d', 'forever'].map(dur => (
+                      <button key={dur} onClick={async () => {
+                        const res = await fetch(`/api/users/${user.username}/dm-mute`, {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ targetUsername: selectedUser, duration: dur })
+                        });
+                        if (res.ok) { setIsDmMuted(true); setShowDmMuteOptions(false); setShowConvOptions(false); }
+                      }}
+                        style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500 }}>
+                        {dur === '8h' ? '8 hours' : dur === '24h' ? '24 hours' : dur === '7d' ? '7 days' : 'Forever'}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Messages area with improved spacing */}
+          {/* Messages area */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column' }}>
-            {messages.length === 0 ? (
+            {needsAcceptance ? (
+              <div style={{ padding: '16px', marginBottom: '16px', backgroundColor: 'var(--hover-bg)', borderRadius: '12px', textAlign: 'center' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: '1.5' }}>
+                  This user is not in your following list.
+                </p>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button onClick={handleAcceptMessages}
+                    style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: 'var(--primary-color)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Check size={14} /> Accept Messages
+                  </button>
+                  <button onClick={handleIgnore}
+                    style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>
+                    Ignore
+                  </button>
+                  <button onClick={() => setShowBlockConfirm(true)}
+                    style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Ban size={14} /> Block
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {isBlocked ? (
+              <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '80px 20px', marginTop: 'auto', marginBottom: 'auto', maxWidth: '360px', marginLeft: 'auto', marginRight: 'auto' }}>
+                <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: 'var(--hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <Ban size={32} style={{ opacity: 0.5 }} />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-color)' }}>Messaging unavailable</h3>
+                <p style={{ fontSize: '14px', lineHeight: '1.5' }}>You cannot send messages to this user.</p>
+              </div>
+            ) : messages.length === 0 && !needsAcceptance ? (
               <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '80px 20px', marginTop: 'auto', marginBottom: 'auto' }}>
                 <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: 'var(--hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <MessageCircle size={32} style={{ opacity: 0.6 }} />
@@ -214,8 +364,14 @@ export default function Messages() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input bar with glass styling */}
+          {/* Input bar */}
+          {!isBlocked && (
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)' }}>
+            {errorMsg && (
+              <div style={{ marginBottom: '8px', padding: '8px 12px', backgroundColor: 'var(--hover-bg)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                {errorMsg}
+              </div>
+            )}
             {dmPreview && (
               <div style={{ position: 'relative', display: 'inline-block', marginBottom: '10px' }}>
                 <img src={dmPreview} alt="" style={{ height: '64px', borderRadius: '10px', border: '1px solid var(--border-color)' }} />
@@ -243,9 +399,31 @@ export default function Messages() {
               </div>
             </div>
           </div>
+          )}
+          {/* Block Confirm Modal */}
+          {showBlockConfirm && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '24px', maxWidth: '380px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-color)' }}>Block @{selectedUser}?</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>They will no longer be able to view your profile, posts, stories, or contact you.</p>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setShowBlockConfirm(false)}
+                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>Cancel</button>
+                  <button onClick={async () => {
+                    const res = await fetch(`/api/users/${user.username}/block`, {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ targetUsername: selectedUser })
+                    });
+                    if (res.ok) { setIsBlocked(true); setShowBlockConfirm(false); }
+                  }}
+                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer' }}>Block</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
-        /* === SIDEBAR / TAB LAYOUT — MODULAR DESIGN === */
+        /* === SIDEBAR / TAB LAYOUT === */
         <div style={{ maxWidth: '720px', margin: '0 auto', padding: '0 16px' }}>
           {/* Header */}
           <div style={{ padding: '24px 0 16px' }}>
@@ -255,10 +433,10 @@ export default function Messages() {
 
           {/* Tabs — pill style */}
           <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', backgroundColor: 'var(--hover-bg)', borderRadius: '12px', padding: '4px' }}>
-            <button onClick={() => setActiveTab('chats')}
-              style={{ flex: 1, padding: '10px 16px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '14px', backgroundColor: activeTab === 'chats' ? 'var(--card-bg)' : 'transparent', color: activeTab === 'chats' ? 'var(--text-color)' : 'var(--text-secondary)', boxShadow: activeTab === 'chats' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.2s' }}>
+            <button onClick={() => setActiveTab('inbox')}
+              style={{ flex: 1, padding: '10px 16px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '14px', backgroundColor: activeTab === 'inbox' ? 'var(--card-bg)' : 'transparent', color: activeTab === 'inbox' ? 'var(--text-color)' : 'var(--text-secondary)', boxShadow: activeTab === 'inbox' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.2s' }}>
               <MessageCircle size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-              Chats
+              Inbox
             </button>
             <button onClick={() => setActiveTab('communities')}
               style={{ flex: 1, padding: '10px 16px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '14px', backgroundColor: activeTab === 'communities' ? 'var(--card-bg)' : 'transparent', color: activeTab === 'communities' ? 'var(--text-color)' : 'var(--text-secondary)', boxShadow: activeTab === 'communities' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.2s' }}>
@@ -267,8 +445,8 @@ export default function Messages() {
             </button>
           </div>
 
-          {activeTab === 'chats' ? (
-            /* === CHATS TAB — modern conversation cards === */
+          {activeTab === 'inbox' ? (
+            /* === INBOX TAB === */
             conversationsLoading ? (
               <div style={{ padding: '64px 16px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                 <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -295,26 +473,33 @@ export default function Messages() {
                       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = 'var(--card-shadow-hover)'; }}
                       onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = 'var(--card-shadow)'; }}>
                       <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <Avatar username={partnerName} size={50} />
+                        <Avatar username={partnerName} image={conv.partnerInfo?.profilePhoto} size={50} />
                         {isOnline && <div style={{ position: 'absolute', bottom: '2px', right: '2px', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: '#31c24d', border: '3px solid var(--card-bg)' }} />}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {conv.partnerInfo?.name && (
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500, marginBottom: '1px' }}>{conv.partnerInfo.name}</div>
                         )}
-                        <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)', marginBottom: '3px' }}>{partnerName}</div>
+                        <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)', marginBottom: '3px' }}>
+                          {partnerName}
+                          {conv.needsAcceptance && <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: '6px' }}>· Pending</span>}
+                        </div>
                         <div style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {conv.lastMessage || 'No messages yet'}
                         </div>
                       </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', flexShrink: 0, alignSelf: 'flex-start', marginTop: '2px' }}>{time}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{time}</div>
+                      {conv.dmMuted && <BellOff size={12} color="var(--text-tertiary)" />}
+                      {conv.needsAcceptance && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary-color)' }} />}
+                    </div>
                     </div>
                   );
                 })}
               </div>
             )
           ) : (
-            /* === COMMUNITIES TAB — premium community cards === */
+            /* === COMMUNITIES TAB === */
             joinedLoading ? (
               <div style={{ padding: '64px 16px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                 <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />

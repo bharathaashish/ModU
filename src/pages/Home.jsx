@@ -42,7 +42,7 @@ export default function Home() {
         // Fetch stories from independent API
         let storiesData = [];
         try {
-          const storiesRes = await fetch('/api/stories');
+          const storiesRes = await fetch(`/api/stories?currentUsername=${user?.username || ''}`);
           if (storiesRes.ok) storiesData = await storiesRes.json();
         } catch (e) { console.warn('Failed to fetch stories:', e); }
         if (res.ok) {

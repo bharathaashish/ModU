@@ -29,6 +29,8 @@ import Messages from './pages/Messages'
 import Saved from './pages/Saved'
 import Followers from './pages/Followers'
 import Following from './pages/Following'
+import BlockedUsers from './pages/BlockedUsers'
+import PostPage from './pages/PostPage'
 
 
 function ProtectedRoute({ children, requireOnboarding = true }) {
@@ -80,6 +82,8 @@ function AppROUTES() {
         <Route path="/settings/appearance" element={<Appearance />} />
         <Route path="/settings/liked" element={<Liked />} />
         <Route path="/settings/saved" element={<Saved />} />
+        <Route path="/settings/blocked" element={<BlockedUsers />} />
+        <Route path="/post/:id" element={<PostPage />} />
       </Route>
 
       

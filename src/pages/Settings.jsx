@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, LogOut, Shield, Sliders, Palette, Heart, Bookmark, Layers, Activity, User, Bell, Sparkles, Clock, MessageCircle, UserPlus, Eye, List } from 'lucide-react';
+import { ArrowLeft, ChevronRight, LogOut, Shield, Sliders, Palette, Heart, Bookmark, Layers, Activity, User, Bell, Sparkles, Clock, MessageCircle, UserPlus, Eye, List, Ban } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const menuItems = [
@@ -8,6 +8,7 @@ const menuItems = [
   { id: 'interests', label: 'Edit Interests', desc: 'Topics you care about', icon: Layers, path: '/settings/interests' },
   { id: 'feed', label: 'Feed Control', desc: 'Content preferences and sorting', icon: Sliders, path: '/settings/feed' },
   { id: 'appearance', label: 'Appearance', desc: 'Theme and display settings', icon: Palette, path: '/settings/appearance' },
+  { id: 'blocked', label: 'Blocked Users', desc: 'Manage blocked accounts', icon: Ban, path: '/settings/blocked' },
   { id: 'liked', label: 'Liked Posts', desc: 'Posts you have liked', icon: Heart, path: '/settings/liked' },
   { id: 'saved', label: 'Saved Posts', desc: 'Posts you have bookmarked', icon: Bookmark, path: '/settings/saved' },
 ];
