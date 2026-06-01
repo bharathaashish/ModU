@@ -335,7 +335,7 @@ export default function CommunityServer() {
               <>
                 {messages.map((m, i) => (
                   <div key={m._id || i} style={{ display: 'flex', gap: '10px', marginBottom: '14px', alignItems: 'flex-start' }}>
-                    <Avatar username={m.senderUsername} size={34} onClick={() => navigate(`/profile/${m.senderUsername}`)} />
+                    <Avatar username={m.senderUsername} image={m.profilePhoto} size={34} onClick={() => navigate(`/profile/${m.senderUsername}`)} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
                         <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)', cursor: 'pointer' }}
@@ -422,7 +422,7 @@ export default function CommunityServer() {
             <div style={{ padding: '0 16px' }}>
               {community.members?.map(m => (
                 <div key={m.username} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', cursor: 'pointer' }} onClick={() => navigate(`/profile/${m.username}`)}>
-                  <Avatar username={m.username} size={32} />
+                  <Avatar username={m.username} image={m.profilePhoto} size={32} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       {m.username}

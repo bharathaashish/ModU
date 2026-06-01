@@ -184,7 +184,7 @@ export default function Notifications() {
                   }
                 }}
               >
-                <Avatar username={notification?.fromUser} size={40} />
+                <Avatar username={notification?.fromUser} image={notification?.profilePhoto} size={40} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: '14px', color: 'var(--text-color)', margin: 0 }}>
                     <span style={{ fontWeight: 600, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); navigate(`/profile/${notification.fromUser}`); }}>{notification.fromUser}</span>{' '}

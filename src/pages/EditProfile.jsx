@@ -238,11 +238,10 @@ export default function EditProfile() {
         <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '20px' }}>
           <div style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '14px' }}>Profile Photo Visibility</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {[
-              { value: 'everyone', label: 'Everyone', desc: 'Anyone can see your profile photo' },
-              { value: 'followers', label: 'Followers Only', desc: 'Only your followers can see your profile photo' },
-              { value: 'nobody', label: 'Nobody', desc: 'Your profile photo is hidden from everyone' },
-            ].map(opt => (
+              {[
+                  { value: 'everyone', label: 'Everyone', desc: 'Anyone can see your profile photo' },
+                  { value: 'mutuals', label: 'Mutuals Only', desc: 'Only people you follow who also follow you back' },
+                ].map(opt => (
               <label key={opt.value} onClick={() => setPhotoVisibility(opt.value)}
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', backgroundColor: photoVisibility === opt.value ? 'var(--hover-bg)' : 'transparent', transition: 'background-color 0.15s' }}>
                 <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: `2px solid ${photoVisibility === opt.value ? 'var(--primary-color)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

@@ -392,7 +392,7 @@ export default function Discover() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {interestPosts.slice(0, 4).map(post => (
                   <div key={post._id} style={{ display: 'flex', gap: '12px', padding: '8px', borderRadius: '8px', cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); navigate(`/discussion/${post._id}`); }}>
-                    <Avatar username={post.username} size={36} />
+                    <Avatar username={post.username} image={post.profilePhoto} size={36} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)' }}>{post.username}</div>
                       <div style={{ fontSize: '13px', color: 'var(--text-color)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.content || '📸 Photo post'}</div>

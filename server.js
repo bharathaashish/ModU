@@ -134,7 +134,10 @@ const UserSchema = new mongoose.Schema({
   interests: [{ type: String }],
   bio: { type: String, default: '' },
   profilePhoto: { type: String, default: '' },
-  photoVisibility: { type: String, enum: ['everyone', 'followers', 'nobody'], default: 'everyone' },
+  photoVisibility: { type: String, enum: ['everyone', 'mutuals'], default: 'everyone' },
+  interestVisibility: { type: String, enum: ['everyone', 'mutuals'], default: 'everyone' },
+  postVisibility: { type: String, enum: ['everyone', 'mutuals'], default: 'everyone' },
+  storyVisibility: { type: String, enum: ['everyone', 'mutuals'], default: 'everyone' },
   isPrivate: { type: Boolean, default: false },
   feedPreference: { type: String, default: 'Friends', enum: ['Balanced', 'Friends', 'Suggested'] },
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
@@ -796,17 +799,19 @@ app.get('/api/users/:username', async (req, res) => {
         });
       }
     }
-    // Apply profile photo privacy
+    // Apply privacy filters based on mutuals
     if (currentUsername && currentUsername !== req.params.username) {
-      const photoVis = user.photoVisibility || 'everyone';
-      if (photoVis === 'nobody') {
+      const currentUserDoc = await User.findOne({ username: currentUsername }).select('following').lean();
+      const isMutual = (currentUserDoc?.following || []).includes(req.params.username)
+        && (user.followers || []).includes(currentUsername);
+
+      // Profile photo visibility
+      if ((user.photoVisibility || 'everyone') === 'mutuals' && !isMutual) {
         user.profilePhoto = '';
-      } else if (photoVis === 'followers') {
-        const currentUser = await User.findOne({ username: currentUsername }).select('following').lean();
-        const isFollower = currentUser?.following?.includes(req.params.username);
-        if (!isFollower) {
-          user.profilePhoto = '';
-        }
+      }
+      // Interest visibility
+      if ((user.interestVisibility || 'everyone') === 'mutuals' && !isMutual) {
+        user.interests = [];
       }
     }
     res.json(user);
@@ -864,6 +869,9 @@ app.put('/api/users/:username', async (req, res) => {
     if (feedPreference !== undefined) updateFields.feedPreference = feedPreference;
     if (isPrivate !== undefined) updateFields.isPrivate = isPrivate;
     if (req.body.photoVisibility !== undefined) updateFields.photoVisibility = req.body.photoVisibility;
+    if (req.body.interestVisibility !== undefined) updateFields.interestVisibility = req.body.interestVisibility;
+    if (req.body.postVisibility !== undefined) updateFields.postVisibility = req.body.postVisibility;
+    if (req.body.storyVisibility !== undefined) updateFields.storyVisibility = req.body.storyVisibility;
 
     console.log(`[UPDATE] fields to set:`, JSON.stringify(updateFields));
 
@@ -1569,6 +1577,25 @@ app.get('/api/posts', async (req, res) => {
       if (removed > 0) console.log(`[PRIVACY] filtered out ${removed} private posts from feed for ${currentUsername}`);
     }
 
+    // POST VISIBILITY FILTER: show posts only to mutuals when user sets postVisibility to 'mutuals'
+    if (currentUsername) {
+      const postOwners = [...new Set(allContent.map(p => p.username))];
+      const ownerDocs = await User.find({ username: { $in: postOwners } }).select('username postVisibility followers').lean();
+      const ownerVisMap = {};
+      for (const o of ownerDocs) {
+        ownerVisMap[o.username] = { postVisibility: o.postVisibility || 'everyone', followers: o.followers || [] };
+      }
+      const curUserDoc = await User.findOne({ username: currentUsername }).select('following').lean();
+      const curUserFollowing = curUserDoc?.following || [];
+      allContent = allContent.filter(item => {
+        if (item.username === currentUsername) return true;
+        const owner = ownerVisMap[item.username];
+        if (!owner || owner.postVisibility === 'everyone') return true;
+        const isMutual = curUserFollowing.includes(item.username) && owner.followers.includes(currentUsername);
+        return isMutual;
+      });
+    }
+
     // BLOCK FILTER + PROFILE MUTE FILTER
     if (currentUsername) {
       const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers profileMutedUsers').lean();
@@ -1590,6 +1617,14 @@ app.get('/api/posts', async (req, res) => {
       }
     }
 
+    // Attach profilePhoto to each content item
+    const allUsernames = [...new Set(allContent.map(p => p.username))];
+    const userPhotos = await User.find({ username: { $in: allUsernames } }).select('username profilePhoto').lean();
+    const photoMap = {};
+    for (const u of userPhotos) {
+      photoMap[u.username] = u.profilePhoto || '';
+    }
+    allContent = allContent.map(p => ({ ...p, profilePhoto: photoMap[p.username] || '' }));
     res.json(allContent);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1683,8 +1718,17 @@ app.get('/api/posts/discussions', async (req, res) => {
         discussions = discussions.filter(d => !hidden.has(d.username));
       }
     }
+    // Attach profilePhoto
+    const discUsernames = [...new Set(discussions.map(d => d.username))];
+    const discUsers = await User.find({ username: { $in: discUsernames } }).select('username profilePhoto').lean();
+    const discPhotoMap = {};
+    for (const u of discUsers) {
+      discPhotoMap[u.username] = u.profilePhoto || '';
+    }
+    discussions = discussions.map(d => ({ ...d, profilePhoto: discPhotoMap[d.username] || '' }));
     res.json(discussions);
   } catch (err) {
+    console.error('Discussions fetch error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1692,8 +1736,11 @@ app.get('/api/posts/discussions', async (req, res) => {
 // GET SINGLE POST BY ID
 app.get('/api/posts/:id', async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id).lean();
+    let post = await Post.findById(req.params.id).lean();
     if (!post) return res.status(404).json({ error: 'Post not found' });
+    // Attach profilePhoto
+    const postUser = await User.findOne({ username: post.username }).select('profilePhoto').lean();
+    post.profilePhoto = postUser?.profilePhoto || '';
     res.json(post);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1703,9 +1750,17 @@ app.get('/api/posts/:id', async (req, res) => {
 // GET POSTS BY COMMUNITY
 app.get('/api/posts/community/:communityId', async (req, res) => {
   try {
-    const posts = await Post.find({ communityId: req.params.communityId })
+    let posts = await Post.find({ communityId: req.params.communityId })
       .sort({ createdAt: -1 })
       .lean();
+    // Attach profilePhoto
+    const commUsernames = [...new Set(posts.map(p => p.username))];
+    const commUsers = await User.find({ username: { $in: commUsernames } }).select('username profilePhoto').lean();
+    const commPhotoMap = {};
+    for (const u of commUsers) {
+      commPhotoMap[u.username] = u.profilePhoto || '';
+    }
+    posts = posts.map(p => ({ ...p, profilePhoto: commPhotoMap[p.username] || '' }));
     res.json(posts);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1774,6 +1829,14 @@ app.get('/api/posts/:id/comments', async (req, res) => {
       comments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     
+    // Attach profilePhoto to each comment
+    const commentUsernames = [...new Set(comments.map(c => c.username))];
+    const commentUsers = await User.find({ username: { $in: commentUsernames } }).select('username profilePhoto').lean();
+    const commentPhotoMap = {};
+    for (const u of commentUsers) {
+      commentPhotoMap[u.username] = u.profilePhoto || '';
+    }
+    comments = comments.map(c => ({ ...c, profilePhoto: commentPhotoMap[c.username] || '' }));
     res.json(comments);
   } catch (err) {
     console.error('Get comments error:', err);
@@ -1784,9 +1847,14 @@ app.get('/api/posts/:id/comments', async (req, res) => {
 // GET COMMENTS BY USER
 app.get('/api/comments/user/:username', async (req, res) => {
   try {
-    const comments = await Comment.find({ username: req.params.username }).sort({ createdAt: -1 }).lean();
+    let comments = await Comment.find({ username: req.params.username }).sort({ createdAt: -1 }).lean();
+    // Attach profilePhoto
+    const commentUsers = await User.find({ username: req.params.username }).select('profilePhoto').lean();
+    const photo = commentUsers[0]?.profilePhoto || '';
+    comments = comments.map(c => ({ ...c, profilePhoto: photo }));
     res.json(comments);
   } catch (err) {
+    console.error('Get comments by user error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -2177,10 +2245,17 @@ app.get('/api/users/:username/saved', async (req, res) => {
     const user = await User.findOne({ username: req.params.username });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const savedPosts = await Post.find({ _id: { $in: user.savedPosts } })
+    let savedPosts = await Post.find({ _id: { $in: user.savedPosts } })
       .sort({ createdAt: -1 })
       .lean();
-    
+    // Attach profilePhoto
+    const savedUsernames = [...new Set(savedPosts.map(p => p.username))];
+    const savedUsers = await User.find({ username: { $in: savedUsernames } }).select('username profilePhoto').lean();
+    const savedPhotoMap = {};
+    for (const u of savedUsers) {
+      savedPhotoMap[u.username] = u.profilePhoto || '';
+    }
+    savedPosts = savedPosts.map(p => ({ ...p, profilePhoto: savedPhotoMap[p.username] || '' }));
     res.json(savedPosts);
   } catch (err) {
     console.error('Get saved posts error:', err);
@@ -2201,6 +2276,14 @@ app.get('/api/users/:username/notifications', async (req, res) => {
     if (blockedSet.size > 0) {
       notifications = notifications.filter(n => !blockedSet.has(n.fromUser));
     }
+    // Attach profilePhoto to each notification
+    const notifUsernames = [...new Set(notifications.map(n => n.fromUser).filter(Boolean))];
+    const notifUsers = await User.find({ username: { $in: notifUsernames } }).select('username profilePhoto').lean();
+    const notifPhotoMap = {};
+    for (const u of notifUsers) {
+      notifPhotoMap[u.username] = u.profilePhoto || '';
+    }
+    notifications = notifications.map(n => ({ ...n, profilePhoto: notifPhotoMap[n.fromUser] || '' }));
     res.json(notifications);
   } catch (err) {
     console.error('Get notifications error:', err);
@@ -2590,10 +2673,18 @@ app.post('/api/channel-messages/:communityId/:channelName', async (req, res) => 
 app.get('/api/channel-messages/:communityId/:channelName', async (req, res) => {
   try {
     const { communityId, channelName } = req.params;
-    const messages = await ChannelMessage.find({ communityId, channelName })
+    let messages = await ChannelMessage.find({ communityId, channelName })
       .sort({ createdAt: 1 })
       .limit(100)
       .lean();
+    // Attach profilePhoto
+    const cmUsernames = [...new Set(messages.map(m => m.senderUsername))];
+    const cmUsers = await User.find({ username: { $in: cmUsernames } }).select('username profilePhoto').lean();
+    const cmPhotoMap = {};
+    for (const u of cmUsers) {
+      cmPhotoMap[u.username] = u.profilePhoto || '';
+    }
+    messages = messages.map(m => ({ ...m, profilePhoto: cmPhotoMap[m.senderUsername] || '' }));
     res.json(messages);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -2620,6 +2711,24 @@ app.get('/api/stories', async (req, res) => {
     let stories = await Story.find({ expiresAt: { $gt: now } })
       .sort({ createdAt: -1 })
       .lean();
+    // STORY VISIBILITY FILTER
+    if (currentUsername) {
+      const storyAuthors = [...new Set(stories.map(s => s.author))];
+      const authorDocs = await User.find({ username: { $in: storyAuthors } }).select('username storyVisibility followers').lean();
+      const authorVisMap = {};
+      for (const a of authorDocs) {
+        authorVisMap[a.username] = { storyVisibility: a.storyVisibility || 'everyone', followers: a.followers || [] };
+      }
+      const curUserDoc = await User.findOne({ username: currentUsername }).select('following').lean();
+      const curUserFollowing = curUserDoc?.following || [];
+      stories = stories.filter(s => {
+        if (s.author === currentUsername) return true;
+        const author = authorVisMap[s.author];
+        if (!author || author.storyVisibility === 'everyone') return true;
+        const isMutual = curUserFollowing.includes(s.author) && author.followers.includes(currentUsername);
+        return isMutual;
+      });
+    }
     // BLOCK FILTER
     if (currentUsername) {
       const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers').lean();

@@ -232,7 +232,7 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
         {/* Post Header */}
         <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, cursor: 'pointer' }} onClick={() => navigate(`/profile/${post.username}`)}>
-            <Avatar username={post?.username} size={32} />
+            <Avatar username={post?.username} image={post?.profilePhoto} size={32} />
             <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-color)' }}>{post.username}</span>
           </div>
           {post.username !== user?.username && (

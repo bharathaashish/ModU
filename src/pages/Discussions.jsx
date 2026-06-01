@@ -267,7 +267,7 @@ export default function Discussions() {
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}>
               {/* Author row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                <Avatar username={d?.username} size={24} />
+                <Avatar username={d?.username} image={d?.profilePhoto} size={24} />
                 <span style={{ fontWeight: 500, fontSize: '13px', color: 'var(--text-secondary)', cursor: 'pointer' }}
                   onClick={e => { e.stopPropagation(); navigate(`/profile/${d.username}`); }}>{d.username}</span>
                 <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>· {timeAgo(d.createdAt)}</span>

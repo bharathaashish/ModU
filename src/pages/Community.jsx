@@ -207,7 +207,7 @@ export default function Community() {
         ) : (
           messages.map((m, i) => (
             <div key={m._id || i} style={{ display: 'flex', gap: '10px', marginBottom: '12px', alignItems: 'flex-start' }}>
-              <Avatar username={m.senderUsername} size={32} onClick={() => navigate(`/profile/${m.senderUsername}`)} />
+              <Avatar username={m.senderUsername} image={m.profilePhoto} size={32} onClick={() => navigate(`/profile/${m.senderUsername}`)} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
                   <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)', cursor: 'pointer' }}

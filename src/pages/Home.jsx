@@ -282,7 +282,7 @@ export default function Home() {
       <div className="feed-item">
         <div className="feed-header" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => navigate(`/profile/${post.username}`)}>
-            <Avatar username={post.username} size={32} />
+            <Avatar username={post.username} image={post.profilePhoto} size={32} />
             <span style={{ fontWeight: 600, fontSize: '14px' }}>{post.username}</span>
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{timeAgo(post.createdAt)}</div>

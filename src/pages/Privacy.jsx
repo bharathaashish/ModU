@@ -1,18 +1,51 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Circle } from 'lucide-react';
+import { ArrowLeft, Eye, FileText, Camera, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+const VISIBILITY_OPTIONS = [
+  { value: 'everyone', label: 'Everyone', desc: 'All users can see this' },
+  { value: 'mutuals', label: 'Mutuals Only', desc: 'Only people you follow who also follow you back' },
+];
+
+const SECTIONS = [
+  { id: 'photoVisibility', label: 'Profile Picture Visibility', icon: Camera },
+  { id: 'interestVisibility', label: 'Interest Visibility', icon: Sparkles },
+  { id: 'postVisibility', label: 'Posts Visibility', icon: FileText },
+  { id: 'storyVisibility', label: 'Stories Visibility', icon: Eye },
+];
 
 export default function Privacy() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
-  const [selectedPrivacy, setSelectedPrivacy] = useState(user?.isPrivate || false);
+
+  const [settings, setSettings] = useState({
+    photoVisibility: user?.photoVisibility || 'everyone',
+    interestVisibility: user?.interestVisibility || 'everyone',
+    postVisibility: user?.postVisibility || 'everyone',
+    storyVisibility: user?.storyVisibility || 'everyone',
+  });
   const [updating, setUpdating] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setSettings({
+        photoVisibility: user.photoVisibility || 'everyone',
+        interestVisibility: user.interestVisibility || 'everyone',
+        postVisibility: user.postVisibility || 'everyone',
+        storyVisibility: user.storyVisibility || 'everyone',
+      });
+    }
+  }, [user]);
 
   const showMsg = (msg) => {
     setSavedMsg(msg);
     setTimeout(() => setSavedMsg(''), 3000);
+  };
+
+  const handleChange = (section, value) => {
+    setSettings(prev => ({ ...prev, [section]: value }));
   };
 
   const handleSave = async () => {
@@ -22,12 +55,12 @@ export default function Privacy() {
       const res = await fetch(`/api/users/${user.username}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isPrivate: selectedPrivacy })
+        body: JSON.stringify(settings)
       });
       if (res.ok) {
         const updatedUser = await res.json();
         updateUser(updatedUser);
-        showMsg('Settings Saved');
+        showMsg('Privacy settings saved');
       }
     } catch (err) {
       console.error('Failed to update privacy', err);
@@ -37,92 +70,67 @@ export default function Privacy() {
   };
 
   return (
-    <div className="app-container" style={{ padding: 0, justifyContent: 'flex-start', minHeight: '100vh', backgroundColor: 'var(--bg-color)' }}>
-      {/* Top Bar */}
-      <div style={{ display: 'flex', position: 'sticky', top: 0, zIndex: 10, alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)' }}>
-        <button onClick={() => navigate('/settings')} style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '4px', marginRight: '16px' }}>
-          <ArrowLeft size={24} />
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', paddingBottom: '100px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)', position: 'sticky', top: 0, zIndex: 10 }}>
+        <button onClick={() => navigate('/settings')} style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '4px', marginRight: '12px', display: 'flex' }}>
+          <ArrowLeft size={22} />
         </button>
-        <h2 style={{ fontSize: '18px', margin: 0, fontWeight: 600, color: 'var(--text-color)' }}>Account Privacy</h2>
+        <h1 style={{ fontSize: '18px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0, color: 'var(--text-color)' }}>Privacy Settings</h1>
       </div>
 
-      <div style={{ flex: 1, width: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ maxWidth: '520px', margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {savedMsg && (
-          <div style={{ padding: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', borderRadius: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 500, marginBottom: '24px' }}>
+          <div style={{ padding: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', borderRadius: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 500 }}>
             {savedMsg}
           </div>
         )}
-        
-        {/* Public Account Option */}
-        <div 
-          onClick={() => setSelectedPrivacy(false)}
-          style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            padding: '20px', 
-            marginBottom: '16px',
-            backgroundColor: 'var(--card-bg)', 
-            border: !selectedPrivacy ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          <div style={{ flex: 1, paddingRight: '16px' }}>
-            <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '4px' }}>Public Account</div>
-            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Anyone can view your profile and posts.</div>
-          </div>
-          <div>
-            {!selectedPrivacy ? <CheckCircle2 size={24} color="var(--primary-color)" /> : <Circle size={24} color="var(--text-secondary)" />}
-          </div>
+
+        <div style={{ padding: '14px 16px', backgroundColor: 'var(--hover-bg)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+          Control who can see your content. <strong>Mutuals</strong> means users who follow you and are followed back by you.
         </div>
 
-        {/* Private Account Option */}
-        <div 
-          onClick={() => setSelectedPrivacy(true)}
-          style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            padding: '20px', 
-            backgroundColor: 'var(--card-bg)', 
-            border: selectedPrivacy ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
+        {SECTIONS.map(section => (
+          <div key={section.id} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <section.icon size={16} color="var(--text-secondary)" />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>{section.label}</span>
+            </div>
+            <div style={{ padding: '8px' }}>
+              {VISIBILITY_OPTIONS.map(opt => (
+                <div
+                  key={opt.value}
+                  onClick={() => handleChange(section.id, opt.value)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px',
+                    borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                    backgroundColor: settings[section.id] === opt.value ? 'var(--hover-bg)' : 'transparent',
+                    transition: 'background-color 0.15s'
+                  }}
+                >
+                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${settings[section.id] === opt.value ? 'var(--primary-color)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {settings[section.id] === opt.value && <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--primary-color)' }} />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-color)' }}>{opt.label}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '1px' }}>{opt.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <button
+          onClick={handleSave}
+          disabled={updating}
+          style={{
+            width: '100%', padding: '12px', backgroundColor: updating ? 'var(--border-color)' : 'var(--primary-color)',
+            border: 'none', borderRadius: 'var(--radius-sm)', color: 'white', fontWeight: 600, fontSize: '14px',
+            cursor: updating ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)', transition: 'background-color 0.15s'
           }}
         >
-          <div style={{ flex: 1, paddingRight: '16px' }}>
-            <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '4px' }}>Private Account</div>
-            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Only approved followers can view your posts and profile.</div>
-          </div>
-          <div>
-            {selectedPrivacy ? <CheckCircle2 size={24} color="var(--primary-color)" /> : <Circle size={24} color="var(--text-secondary)" />}
-          </div>
-        </div>
-
-        {/* Save Button */}
-        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', paddingTop: '24px' }}>
-          <button 
-            onClick={handleSave} 
-            disabled={updating}
-            style={{ 
-              padding: '12px 24px', 
-              backgroundColor: 'var(--primary-color)', 
-              color: 'white', 
-              borderRadius: '8px', 
-              border: 'none', 
-              fontWeight: 600, 
-              fontSize: '16px',
-              cursor: 'pointer',
-              transition: 'opacity 0.2s',
-              opacity: updating ? 0.5 : 1
-            }}
-          >
-            Save Changes
-          </button>
-        </div>
+          {updating ? 'Saving...' : 'Save Changes'}
+        </button>
       </div>
     </div>
   );

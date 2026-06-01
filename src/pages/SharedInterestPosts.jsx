@@ -179,7 +179,7 @@ export default function SharedInterestPosts() {
               onClick={() => navigate(`/discussion/${post._id}`)}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <Avatar username={post.username} size={32} />
+                <Avatar username={post.username} image={post.profilePhoto} size={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)' }}>
                     {post.username}

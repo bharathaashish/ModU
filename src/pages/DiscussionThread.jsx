@@ -392,7 +392,7 @@ export default function DiscussionThread() {
         {/* Author + menu */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Avatar username={post.username} size={32} onClick={() => navigate(`/profile/${post.username}`)} />
+            <Avatar username={post.username} image={post.profilePhoto} size={32} onClick={() => navigate(`/profile/${post.username}`)} />
             <div>
               <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)', cursor: 'pointer' }}
                 onClick={() => navigate(`/profile/${post.username}`)}>{post.username}
