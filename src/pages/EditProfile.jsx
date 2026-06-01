@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, Save, User, Mail, Phone, Calendar, FileText, AtSign, Camera, CheckCircle2, Trash2 } from 'lucide-react';
 import Avatar from '../components/Avatar';
+import CropModal from '../components/CropModal';
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_.]*$/;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -25,6 +26,8 @@ export default function EditProfile() {
   const [saved, setSaved] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [cropImage, setCropImage] = useState(null);
 
   const validateUsername = useCallback((val) => {
     if (val.length > 0 && !USERNAME_REGEX.test(val)) {
@@ -57,7 +60,8 @@ export default function EditProfile() {
     setError('');
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setPhotoPreview(ev.target.result);
+      setCropImage(ev.target.result);
+      setShowCropModal(true);
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -104,6 +108,17 @@ export default function EditProfile() {
       setError('Failed to remove photo');
     }
     setPhotoUploading(false);
+  };
+
+  const handleCropSave = (croppedImage) => {
+    setPhotoPreview(croppedImage);
+    setShowCropModal(false);
+    setCropImage(null);
+  };
+
+  const handleCloseCropModal = () => {
+    setShowCropModal(false);
+    setCropImage(null);
   };
 
   const handleSave = async () => {
@@ -240,7 +255,7 @@ export default function EditProfile() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[
                   { value: 'everyone', label: 'Everyone', desc: 'Anyone can see your profile photo' },
-                  { value: 'mutuals', label: 'Mutuals Only', desc: 'Only people you follow who also follow you back' },
+                  { value: 'followers', label: 'Followers Only', desc: 'Only your followers can see your profile photo' },
                 ].map(opt => (
               <label key={opt.value} onClick={() => setPhotoVisibility(opt.value)}
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', backgroundColor: photoVisibility === opt.value ? 'var(--hover-bg)' : 'transparent', transition: 'background-color 0.15s' }}>
@@ -263,6 +278,10 @@ export default function EditProfile() {
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
+
+      {showCropModal && cropImage && (
+        <CropModal image={cropImage} onSave={handleCropSave} onClose={handleCloseCropModal} />
+      )}
     </div>
   );
 }

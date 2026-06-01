@@ -1,40 +1,41 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Eye, FileText, Camera, Sparkles } from 'lucide-react';
+import { ArrowLeft, Eye, Camera, Sparkles, Lock, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const VISIBILITY_OPTIONS = [
   { value: 'everyone', label: 'Everyone', desc: 'All users can see this' },
-  { value: 'mutuals', label: 'Mutuals Only', desc: 'Only people you follow who also follow you back' },
+  { value: 'followers', label: 'Followers Only', desc: 'Only your followers can see this' },
+];
+
+const ACCOUNT_OPTIONS = [
+  { value: false, label: 'Public Account', desc: 'Anyone can see your posts and stories', icon: Globe },
+  { value: true, label: 'Private Account', desc: 'Only approved followers can see your posts and stories', icon: Lock },
 ];
 
 const SECTIONS = [
   { id: 'photoVisibility', label: 'Profile Picture Visibility', icon: Camera },
-  { id: 'interestVisibility', label: 'Interest Visibility', icon: Sparkles },
-  { id: 'postVisibility', label: 'Posts Visibility', icon: FileText },
-  { id: 'storyVisibility', label: 'Stories Visibility', icon: Eye },
+  { id: 'interestVisibility', label: 'Interest Tag Visibility', icon: Sparkles },
 ];
 
 export default function Privacy() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
 
+  const [isPrivate, setIsPrivate] = useState(() => user?.isPrivate || false);
   const [settings, setSettings] = useState({
     photoVisibility: user?.photoVisibility || 'everyone',
     interestVisibility: user?.interestVisibility || 'everyone',
-    postVisibility: user?.postVisibility || 'everyone',
-    storyVisibility: user?.storyVisibility || 'everyone',
   });
   const [updating, setUpdating] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
 
   useEffect(() => {
     if (user) {
+      setIsPrivate(user.isPrivate || false);
       setSettings({
         photoVisibility: user.photoVisibility || 'everyone',
         interestVisibility: user.interestVisibility || 'everyone',
-        postVisibility: user.postVisibility || 'everyone',
-        storyVisibility: user.storyVisibility || 'everyone',
       });
     }
   }, [user]);
@@ -55,7 +56,7 @@ export default function Privacy() {
       const res = await fetch(`/api/users/${user.username}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings)
+        body: JSON.stringify({ ...settings, isPrivate })
       });
       if (res.ok) {
         const updatedUser = await res.json();
@@ -86,9 +87,41 @@ export default function Privacy() {
         )}
 
         <div style={{ padding: '14px 16px', backgroundColor: 'var(--hover-bg)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-          Control who can see your content. <strong>Mutuals</strong> means users who follow you and are followed back by you.
+          Manage your account privacy. When your account is private, only approved followers can see your posts and stories. Profile photo and interest tags have their own independent visibility controls.
         </div>
 
+        {/* Account Privacy */}
+        <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Eye size={16} color="var(--text-secondary)" />
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>Account Privacy</span>
+          </div>
+          <div style={{ padding: '8px' }}>
+            {ACCOUNT_OPTIONS.map(opt => (
+              <div
+                key={String(opt.value)}
+                onClick={() => setIsPrivate(opt.value)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px',
+                  borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                  backgroundColor: isPrivate === opt.value ? 'var(--hover-bg)' : 'transparent',
+                  transition: 'background-color 0.15s'
+                }}
+              >
+                <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${isPrivate === opt.value ? 'var(--primary-color)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {isPrivate === opt.value && <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--primary-color)' }} />}
+                </div>
+                <opt.icon size={16} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-color)' }}>{opt.label}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '1px' }}>{opt.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Visibility sections */}
         {SECTIONS.map(section => (
           <div key={section.id} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>

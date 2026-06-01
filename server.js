@@ -134,10 +134,8 @@ const UserSchema = new mongoose.Schema({
   interests: [{ type: String }],
   bio: { type: String, default: '' },
   profilePhoto: { type: String, default: '' },
-  photoVisibility: { type: String, enum: ['everyone', 'mutuals'], default: 'everyone' },
-  interestVisibility: { type: String, enum: ['everyone', 'mutuals'], default: 'everyone' },
-  postVisibility: { type: String, enum: ['everyone', 'mutuals'], default: 'everyone' },
-  storyVisibility: { type: String, enum: ['everyone', 'mutuals'], default: 'everyone' },
+  photoVisibility: { type: String, enum: ['everyone', 'followers'], default: 'everyone' },
+  interestVisibility: { type: String, enum: ['everyone', 'followers'], default: 'everyone' },
   isPrivate: { type: Boolean, default: false },
   feedPreference: { type: String, default: 'Friends', enum: ['Balanced', 'Friends', 'Suggested'] },
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
@@ -799,18 +797,16 @@ app.get('/api/users/:username', async (req, res) => {
         });
       }
     }
-    // Apply privacy filters based on mutuals
+    // Apply privacy filters
     if (currentUsername && currentUsername !== req.params.username) {
-      const currentUserDoc = await User.findOne({ username: currentUsername }).select('following').lean();
-      const isMutual = (currentUserDoc?.following || []).includes(req.params.username)
-        && (user.followers || []).includes(currentUsername);
+      const isFollower = (user.followers || []).includes(currentUsername);
 
       // Profile photo visibility
-      if ((user.photoVisibility || 'everyone') === 'mutuals' && !isMutual) {
+      if ((user.photoVisibility || 'everyone') === 'followers' && !isFollower) {
         user.profilePhoto = '';
       }
       // Interest visibility
-      if ((user.interestVisibility || 'everyone') === 'mutuals' && !isMutual) {
+      if ((user.interestVisibility || 'everyone') === 'followers' && !isFollower) {
         user.interests = [];
       }
     }
@@ -870,8 +866,6 @@ app.put('/api/users/:username', async (req, res) => {
     if (isPrivate !== undefined) updateFields.isPrivate = isPrivate;
     if (req.body.photoVisibility !== undefined) updateFields.photoVisibility = req.body.photoVisibility;
     if (req.body.interestVisibility !== undefined) updateFields.interestVisibility = req.body.interestVisibility;
-    if (req.body.postVisibility !== undefined) updateFields.postVisibility = req.body.postVisibility;
-    if (req.body.storyVisibility !== undefined) updateFields.storyVisibility = req.body.storyVisibility;
 
     console.log(`[UPDATE] fields to set:`, JSON.stringify(updateFields));
 
@@ -1575,25 +1569,6 @@ app.get('/api/posts', async (req, res) => {
       });
       const removed = before - allContent.length;
       if (removed > 0) console.log(`[PRIVACY] filtered out ${removed} private posts from feed for ${currentUsername}`);
-    }
-
-    // POST VISIBILITY FILTER: show posts only to mutuals when user sets postVisibility to 'mutuals'
-    if (currentUsername) {
-      const postOwners = [...new Set(allContent.map(p => p.username))];
-      const ownerDocs = await User.find({ username: { $in: postOwners } }).select('username postVisibility followers').lean();
-      const ownerVisMap = {};
-      for (const o of ownerDocs) {
-        ownerVisMap[o.username] = { postVisibility: o.postVisibility || 'everyone', followers: o.followers || [] };
-      }
-      const curUserDoc = await User.findOne({ username: currentUsername }).select('following').lean();
-      const curUserFollowing = curUserDoc?.following || [];
-      allContent = allContent.filter(item => {
-        if (item.username === currentUsername) return true;
-        const owner = ownerVisMap[item.username];
-        if (!owner || owner.postVisibility === 'everyone') return true;
-        const isMutual = curUserFollowing.includes(item.username) && owner.followers.includes(currentUsername);
-        return isMutual;
-      });
     }
 
     // BLOCK FILTER + PROFILE MUTE FILTER
@@ -2711,22 +2686,19 @@ app.get('/api/stories', async (req, res) => {
     let stories = await Story.find({ expiresAt: { $gt: now } })
       .sort({ createdAt: -1 })
       .lean();
-    // STORY VISIBILITY FILTER
+    // PRIVACY FILTER: remove stories from private accounts that currentUser cannot view
     if (currentUsername) {
-      const storyAuthors = [...new Set(stories.map(s => s.author))];
-      const authorDocs = await User.find({ username: { $in: storyAuthors } }).select('username storyVisibility followers').lean();
-      const authorVisMap = {};
-      for (const a of authorDocs) {
-        authorVisMap[a.username] = { storyVisibility: a.storyVisibility || 'everyone', followers: a.followers || [] };
+      const allUsers = await User.find().select('username isPrivate followers').lean();
+      const privacyMap = {};
+      for (const u of allUsers) {
+        privacyMap[u.username] = { isPrivate: u.isPrivate, followers: u.followers || [] };
       }
-      const curUserDoc = await User.findOne({ username: currentUsername }).select('following').lean();
-      const curUserFollowing = curUserDoc?.following || [];
       stories = stories.filter(s => {
+        const owner = privacyMap[s.author];
+        if (!owner) return true;
+        if (!owner.isPrivate) return true;
         if (s.author === currentUsername) return true;
-        const author = authorVisMap[s.author];
-        if (!author || author.storyVisibility === 'everyone') return true;
-        const isMutual = curUserFollowing.includes(s.author) && author.followers.includes(currentUsername);
-        return isMutual;
+        return owner.followers.includes(currentUsername);
       });
     }
     // BLOCK FILTER
