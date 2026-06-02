@@ -102,9 +102,9 @@ export default function Settings() {
                 borderBottom: index < menuItems.length - 1 ? '1px solid var(--border-color)' : 'none',
                 margin: '0 16px'
               }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hover-bg)'; }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--surface-alt)'; }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-              <item.icon size={20} color="var(--primary-color)" style={{ flexShrink: 0 }} />
+              <item.icon size={20} color="var(--text-color)" style={{ flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)' }}>{item.label}</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '1px' }}>{item.desc}</div>
@@ -125,7 +125,7 @@ export default function Settings() {
           <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
             {['all', 'posts', 'likes', 'comments'].map(tab => (
               <button key={tab} onClick={() => setActivityTab(tab)}
-                style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: activityTab === tab ? 'var(--primary-color)' : 'var(--hover-bg)', color: activityTab === tab ? 'white' : 'var(--text-secondary)', transition: 'all 0.15s' }}>
+                style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: activityTab === tab ? 'var(--text-color)' : 'var(--surface-alt)', color: activityTab === tab ? 'white' : 'var(--text-secondary)', transition: 'all 0.15s' }}>
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
@@ -170,7 +170,7 @@ export default function Settings() {
         {/* Log Out */}
         <div style={{ padding: '16px' }}>
           <button onClick={handleLogout}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '14px', backgroundColor: 'transparent', border: 'none', color: '#ef4444', fontWeight: 600, fontSize: '15px', cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '14px', backgroundColor: 'transparent', border: 'none', color: 'var(--text-color)', fontWeight: 600, fontSize: '15px', cursor: 'pointer' }}>
             <LogOut size={18} />
             Log Out
           </button>

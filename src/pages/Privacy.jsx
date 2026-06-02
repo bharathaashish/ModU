@@ -81,20 +81,20 @@ export default function Privacy() {
 
       <div style={{ maxWidth: '520px', margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {savedMsg && (
-          <div style={{ padding: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', borderRadius: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 500 }}>
+          <div style={{ padding: '12px', backgroundColor: 'var(--surface-alt)', color: 'var(--text-color)', borderRadius: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 500 }}>
             {savedMsg}
           </div>
         )}
 
-        <div style={{ padding: '14px 16px', backgroundColor: 'var(--hover-bg)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+        <div style={{ padding: '14px 16px', backgroundColor: 'var(--surface-alt)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
           Manage your account privacy. When your account is private, only approved followers can see your posts and stories. Profile photo and interest tags have their own independent visibility controls.
         </div>
 
         {/* Close Friends link */}
         <div onClick={() => navigate('/settings/close-friends')}
           style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 18px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.15s' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(34,197,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Heart size={18} color="#22c55e" />
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Heart size={18} color="var(--text-color)" />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-color)' }}>Close Friends</div>
@@ -117,12 +117,12 @@ export default function Privacy() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px',
                   borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                  backgroundColor: isPrivate === opt.value ? 'var(--hover-bg)' : 'transparent',
+                  backgroundColor: isPrivate === opt.value ? 'var(--surface-alt)' : 'transparent',
                   transition: 'background-color 0.15s'
                 }}
               >
-                <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${isPrivate === opt.value ? 'var(--primary-color)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {isPrivate === opt.value && <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--primary-color)' }} />}
+                <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${isPrivate === opt.value ? 'var(--text-color)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {isPrivate === opt.value && <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: "var(--active-color)" }} />}
                 </div>
                 <opt.icon size={16} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
@@ -149,12 +149,12 @@ export default function Privacy() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px',
                     borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                    backgroundColor: settings[section.id] === opt.value ? 'var(--hover-bg)' : 'transparent',
+                    backgroundColor: settings[section.id] === opt.value ? 'var(--surface-alt)' : 'transparent',
                     transition: 'background-color 0.15s'
                   }}
                 >
-                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${settings[section.id] === opt.value ? 'var(--primary-color)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {settings[section.id] === opt.value && <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: 'var(--primary-color)' }} />}
+                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${settings[section.id] === opt.value ? 'var(--text-color)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {settings[section.id] === opt.value && <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: "var(--active-color)" }} />}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-color)' }}>{opt.label}</div>
@@ -170,8 +170,8 @@ export default function Privacy() {
           onClick={handleSave}
           disabled={updating}
           style={{
-            width: '100%', padding: '12px', backgroundColor: updating ? 'var(--border-color)' : 'var(--primary-color)',
-            border: 'none', borderRadius: 'var(--radius-sm)', color: 'white', fontWeight: 600, fontSize: '14px',
+            width: '100%', padding: '12px', backgroundColor: updating ? 'var(--border-color)' : 'var(--text-color)',
+            border: 'none', borderRadius: 'var(--radius-sm)', color: 'var(--active-text)', fontWeight: 600, fontSize: '14px',
             cursor: updating ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)', transition: 'background-color 0.15s'
           }}
         >

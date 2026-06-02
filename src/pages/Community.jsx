@@ -176,8 +176,8 @@ export default function Community() {
                 onClick={() => setActiveChannel(ch.name)}
                 style={{
                   padding: '6px 14px', whiteSpace: 'nowrap', flexShrink: 0,
-                  backgroundColor: activeChannel === ch.name ? 'var(--primary-color)' : 'var(--bg-color)',
-                  border: `1px solid ${activeChannel === ch.name ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                  backgroundColor: activeChannel === ch.name ? 'var(--text-color)' : 'var(--bg-color)',
+                  border: `1px solid ${activeChannel === ch.name ? 'var(--text-color)' : 'var(--border-color)'}`,
                   borderRadius: '16px', color: activeChannel === ch.name ? '#fff' : 'var(--text-color)',
                   fontSize: '12px', fontWeight: activeChannel === ch.name ? 600 : 400,
                   cursor: 'pointer', transition: 'all 0.2s'
@@ -231,7 +231,7 @@ export default function Community() {
           {messagePreview && (
             <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
               <img src={messagePreview} alt="" style={{ height: '60px', borderRadius: '6px' }} />
-              <button onClick={() => { setMessagePreview(''); setMessageImage(null); }} style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.7)', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
+              <button onClick={() => { setMessagePreview(''); setMessageImage(null); }} style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.7)', border: 'none', color: 'var(--active-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
                 <X size={12} />
               </button>
             </div>
@@ -259,8 +259,8 @@ export default function Community() {
               disabled={sending || (!messageText.trim() && !messageImage)}
               style={{
                 width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
-                backgroundColor: sending || (!messageText.trim() && !messageImage) ? 'var(--border-color)' : 'var(--primary-color)',
-                border: 'none', color: 'white', cursor: sending || (!messageText.trim() && !messageImage) ? 'not-allowed' : 'pointer',
+                backgroundColor: sending || (!messageText.trim() && !messageImage) ? 'var(--border-color)' : 'var(--text-color)',
+                border: 'none', color: 'var(--active-text)', cursor: sending || (!messageText.trim() && !messageImage) ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}
             >

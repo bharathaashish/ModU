@@ -115,7 +115,7 @@ export default function CropModal({ image, onSave, onClose }) {
           </button>
           <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-color)' }}>Crop Photo</span>
           <button onClick={extractCrop}
-            style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', padding: '4px', fontWeight: 600, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '4px', fontWeight: 600, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Check size={18} /> Save
           </button>
         </div>
@@ -132,7 +132,7 @@ export default function CropModal({ image, onSave, onClose }) {
             style={{
               width: containerSize, height: containerSize, borderRadius: '50%',
               overflow: 'hidden', position: 'relative', cursor: dragging ? 'grabbing' : 'grab',
-              boxShadow: '0 0 0 3px var(--primary-color)',
+              boxShadow: '0 0 0 3px var(--text-color)',
               backgroundColor: '#000', userSelect: 'none', touchAction: 'none'
             }}
           >
@@ -175,7 +175,7 @@ export default function CropModal({ image, onSave, onClose }) {
               min="0.5" max="5" step="0.01"
               value={zoom}
               onChange={(e) => setZoom(parseFloat(e.target.value))}
-              style={{ flex: 1, accentColor: 'var(--primary-color)' }}
+              style={{ flex: 1, accentColor: 'var(--text-color)' }}
             />
             <ZoomIn size={18} color="var(--text-secondary)" />
           </div>

@@ -107,7 +107,7 @@ export default function CloseFriends() {
 
       <div style={{ maxWidth: '520px', margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {/* Info card */}
-        <div style={{ padding: '14px 16px', backgroundColor: 'var(--hover-bg)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+        <div style={{ padding: '14px 16px', backgroundColor: 'var(--surface-alt)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
           Close friends can see stories you share with them. Your list is completely private — nobody knows who's on it.
         </div>
 
@@ -118,7 +118,7 @@ export default function CloseFriends() {
               Close Friends ({closeFriends.length})
             </span>
             <button onClick={openAdd}
-              style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              style={{ background: 'none', border: 'none', color: 'var(--text-color)', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Plus size={14} /> Add
             </button>
           </div>
@@ -140,8 +140,8 @@ export default function CloseFriends() {
                     {cf.name && <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '1px' }}>@{cf.username}</div>}
                   </div>
                   <button onClick={() => handleRemove(cf.username)}
-                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px', borderRadius: '8px', display: 'flex', transition: 'background 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '6px', borderRadius: '8px', display: 'flex', transition: 'background 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-alt)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                     <X size={16} />
                   </button>
@@ -171,7 +171,7 @@ export default function CloseFriends() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search followers..."
-                style={{ width: '100%', padding: '10px 12px 10px 36px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '10px 12px 10px 36px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' }}
               />
             </div>
 
@@ -186,7 +186,7 @@ export default function CloseFriends() {
                 filteredCandidates.map(c => (
                   <div key={c.username}
                     style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', transition: 'background 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-alt)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                     <Avatar username={c.username} image={c.profilePhoto} size={40} />
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -194,7 +194,7 @@ export default function CloseFriends() {
                       {c.name && <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>@{c.username}</div>}
                     </div>
                     <button onClick={() => handleAdd(c.username)}
-                      style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', border: 'none', background: 'var(--primary-color)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <UserCheck size={14} /> Add
                     </button>
                   </div>

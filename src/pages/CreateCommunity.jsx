@@ -69,7 +69,7 @@ export default function CreateCommunity() {
 
       <form onSubmit={handleSubmit} style={{ maxWidth: '480px', margin: '0 auto' }}>
         {error && <div className="error-text">{error}</div>}
-        {success && <div style={{ color: '#2ecc71', fontSize: '14px', fontWeight: 500, marginBottom: '16px', textAlign: 'center' }}>{success}</div>}
+        {success && <div style={{ color: 'var(--text-color)', fontSize: '14px', fontWeight: 500, marginBottom: '16px', textAlign: 'center' }}>{success}</div>}
 
         <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '6px', display: 'block' }}>Community Name *</label>
         <input className="form-input" placeholder="e.g. AOT_India, TechBeginnersHub" value={name} onChange={e => setName(e.target.value)} autoFocus required />
@@ -87,8 +87,8 @@ export default function CreateCommunity() {
         <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
           <button type="button" onClick={() => setIsPrivate(false)} style={{
             flex: 1, padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            backgroundColor: !isPrivate ? 'var(--primary-color)' : 'var(--bg-color)',
-            border: `1px solid ${!isPrivate ? 'var(--primary-color)' : 'var(--border-color)'}`,
+            backgroundColor: !isPrivate ? 'var(--text-color)' : 'var(--bg-color)',
+            border: `1px solid ${!isPrivate ? 'var(--text-color)' : 'var(--border-color)'}`,
             borderRadius: '8px', color: !isPrivate ? '#fff' : 'var(--text-color)',
             fontSize: '14px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
           }}>
@@ -96,8 +96,8 @@ export default function CreateCommunity() {
           </button>
           <button type="button" onClick={() => setIsPrivate(true)} style={{
             flex: 1, padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            backgroundColor: isPrivate ? 'var(--primary-color)' : 'var(--bg-color)',
-            border: `1px solid ${isPrivate ? 'var(--primary-color)' : 'var(--border-color)'}`,
+            backgroundColor: isPrivate ? 'var(--text-color)' : 'var(--bg-color)',
+            border: `1px solid ${isPrivate ? 'var(--text-color)' : 'var(--border-color)'}`,
             borderRadius: '8px', color: isPrivate ? '#fff' : 'var(--text-color)',
             fontSize: '14px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
           }}>

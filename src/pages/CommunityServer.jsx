@@ -16,7 +16,7 @@ function timeAgo(dateStr) {
   return `${Math.floor(days / 7)}w`;
 }
 
-const ROLE_COLORS = { owner: '#f5a623', admin: '#e74c3c', moderator: '#2ecc71', member: 'var(--text-secondary)' };
+const ROLE_COLORS = { owner: 'var(--text-secondary)', admin: 'var(--text-color)', moderator: 'var(--text-color)', member: 'var(--text-secondary)' };
 const ROLE_BADGES = { owner: '👑', admin: '🛡️', moderator: '⚡', member: '' };
 
 export default function CommunityServer() {
@@ -362,7 +362,7 @@ export default function CommunityServer() {
               {messagePreview && (
                 <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
                   <img src={messagePreview} alt="" style={{ height: '60px', borderRadius: '6px' }} />
-                  <button onClick={() => { setMessagePreview(''); setMessageImage(null); }} style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.7)', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
+                  <button onClick={() => { setMessagePreview(''); setMessageImage(null); }} style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.7)', border: 'none', color: 'var(--active-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
                     <X size={12} />
                   </button>
                 </div>
@@ -390,8 +390,8 @@ export default function CommunityServer() {
                   disabled={sending || (!messageText.trim() && !messageImage)}
                   style={{
                     width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
-                    backgroundColor: sending || (!messageText.trim() && !messageImage) ? 'var(--border-color)' : 'var(--primary-color)',
-                    border: 'none', color: 'white', cursor: sending || (!messageText.trim() && !messageImage) ? 'not-allowed' : 'pointer',
+                    backgroundColor: sending || (!messageText.trim() && !messageImage) ? 'var(--border-color)' : 'var(--text-color)',
+                    border: 'none', color: 'var(--active-text)', cursor: sending || (!messageText.trim() && !messageImage) ? 'not-allowed' : 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}
                 >
@@ -443,7 +443,7 @@ export default function CommunityServer() {
                       </select>
                       <button
                         onClick={e => { e.stopPropagation(); handleKickMember(m.username); }}
-                        style={{ fontSize: '11px', padding: '6px 10px', background: 'transparent', border: '1px solid #ef4444', borderRadius: '6px', color: '#ef4444', cursor: 'pointer' }}>
+                        style={{ fontSize: '11px', padding: '6px 10px', background: 'transparent', border: '1px solid var(--text-color)', borderRadius: '6px', color: 'var(--text-color)', cursor: 'pointer' }}>
                         Kick
                       </button>
                     </div>
@@ -483,7 +483,7 @@ export default function CommunityServer() {
             </div>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '12px', backgroundColor: 'var(--bg-color)', borderRadius: '8px', marginBottom: '16px' }}>
               <span style={{ flex: 1, fontSize: '13px', color: 'var(--text-color)', wordBreak: 'break-all' }}>{inviteLink}</span>
-              <button onClick={handleCopyInvite} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', flexShrink: 0 }}>
+              <button onClick={handleCopyInvite} style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', flexShrink: 0 }}>
                 {copied ? <Check size={18} /> : <Copy size={18} />}
               </button>
             </div>

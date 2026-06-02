@@ -280,7 +280,7 @@ export default function Messages() {
                       </button>
                     ) : (
                       <button onClick={() => { setShowConvOptions(false); setShowBlockConfirm(true); }}
-                        style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Ban size={14} /> Block @{selectedUser}
                       </button>
                     )}
@@ -313,13 +313,13 @@ export default function Messages() {
           {/* Messages area */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column' }}>
             {needsAcceptance ? (
-              <div style={{ padding: '16px', marginBottom: '16px', backgroundColor: 'var(--hover-bg)', borderRadius: '12px', textAlign: 'center' }}>
+              <div style={{ padding: '16px', marginBottom: '16px', backgroundColor: 'var(--surface-alt)', borderRadius: '12px', textAlign: 'center' }}>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: '1.5' }}>
                   This user is not in your following list.
                 </p>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
                   <button onClick={handleAcceptMessages}
-                    style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: 'var(--primary-color)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Check size={14} /> Accept Messages
                   </button>
                   <button onClick={handleIgnore}
@@ -327,7 +327,7 @@ export default function Messages() {
                     Ignore
                   </button>
                   <button onClick={() => setShowBlockConfirm(true)}
-                    style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Ban size={14} /> Block
                   </button>
                 </div>
@@ -335,7 +335,7 @@ export default function Messages() {
             ) : null}
             {isBlocked ? (
               <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '80px 20px', marginTop: 'auto', marginBottom: 'auto', maxWidth: '360px', marginLeft: 'auto', marginRight: 'auto' }}>
-                <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: 'var(--hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <Ban size={32} style={{ opacity: 0.5 }} />
                 </div>
                 <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-color)' }}>Messaging unavailable</h3>
@@ -343,7 +343,7 @@ export default function Messages() {
               </div>
             ) : messages.length === 0 && !needsAcceptance ? (
               <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '80px 20px', marginTop: 'auto', marginBottom: 'auto' }}>
-                <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: 'var(--hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <MessageCircle size={32} style={{ opacity: 0.6 }} />
                 </div>
                 <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-color)' }}>No messages yet</h3>
@@ -362,7 +362,7 @@ export default function Messages() {
                       )}
                       <div style={{
                         padding: '12px 18px',
-                        backgroundColor: isMine ? 'var(--primary-color)' : 'var(--card-bg)',
+                        backgroundColor: isMine ? 'var(--text-color)' : 'var(--card-bg)',
                         borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                         color: isMine ? '#fff' : 'var(--text-color)',
                         border: isMine ? 'none' : '1px solid var(--border-color)',
@@ -393,7 +393,7 @@ export default function Messages() {
           {!isBlocked && (
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)' }}>
             {errorMsg && (
-              <div style={{ marginBottom: '8px', padding: '8px 12px', backgroundColor: 'var(--hover-bg)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+              <div style={{ marginBottom: '8px', padding: '8px 12px', backgroundColor: 'var(--surface-alt)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
                 {errorMsg}
               </div>
             )}
@@ -401,7 +401,7 @@ export default function Messages() {
               <div style={{ position: 'relative', display: 'inline-block', marginBottom: '10px' }}>
                 <img src={dmPreview} alt="" style={{ height: '64px', borderRadius: '10px', border: '1px solid var(--border-color)' }} />
                 <button onClick={() => { setDmPreview(''); setDmImage(null); }}
-                  style={{ position: 'absolute', top: '-8px', right: '-8px', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ position: 'absolute', top: '-8px', right: '-8px', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', border: 'none', color: 'var(--active-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <X size={14} />
                 </button>
               </div>
@@ -418,7 +418,7 @@ export default function Messages() {
                   rows="1"
                   style={{ flex: 1, minHeight: '44px', maxHeight: '120px', padding: '10px 16px', borderRadius: '20px', border: 'none', backgroundColor: 'transparent', color: 'var(--text-color)', resize: 'none', outline: 'none', fontSize: '15px', lineHeight: '1.4' }} />
                 <button onClick={sendMessage} disabled={loading || (!newMessage.trim() && !dmImage)}
-                  style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: loading || (!newMessage.trim() && !dmImage) ? 'var(--hover-bg)' : 'var(--primary-color)', border: 'none', color: 'white', cursor: loading || (!newMessage.trim() && !dmImage) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 'auto', transition: 'all 0.2s' }}>
+                  style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: loading || (!newMessage.trim() && !dmImage) ? 'var(--surface-alt)' : 'var(--text-color)', border: 'none', color: 'var(--active-text)', cursor: loading || (!newMessage.trim() && !dmImage) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 'auto', transition: 'all 0.2s' }}>
                   <Send size={18} />
                 </button>
               </div>
@@ -441,7 +441,7 @@ export default function Messages() {
                     });
                     if (res.ok) { setIsBlocked(true); setShowBlockConfirm(false); }
                   }}
-                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer' }}>Block</button>
+                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: 'var(--active-color)', color: '#fff', cursor: 'pointer' }}>Block</button>
                 </div>
               </div>
             </div>
@@ -457,7 +457,7 @@ export default function Messages() {
           </div>
 
           {/* Tabs — pill style */}
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', backgroundColor: 'var(--hover-bg)', borderRadius: '12px', padding: '4px' }}>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', backgroundColor: 'var(--surface-alt)', borderRadius: '12px', padding: '4px' }}>
             <button onClick={() => setActiveTab('inbox')}
               style={{ flex: 1, padding: '10px 16px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '14px', backgroundColor: activeTab === 'inbox' ? 'var(--card-bg)' : 'transparent', color: activeTab === 'inbox' ? 'var(--text-color)' : 'var(--text-secondary)', boxShadow: activeTab === 'inbox' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.2s' }}>
               <MessageCircle size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
@@ -474,11 +474,11 @@ export default function Messages() {
             /* === INBOX TAB === */
             conversationsLoading ? (
               <div style={{ padding: '64px 16px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               </div>
             ) : conversations.length === 0 ? (
               <div style={{ padding: '80px 20px', textAlign: 'center' }}>
-                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                   <MessageCircle size={36} style={{ opacity: 0.5 }} />
                 </div>
                 <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-color)' }}>No messages yet</h3>
@@ -495,12 +495,12 @@ export default function Messages() {
                   const isOnline = conv.lastTimestamp && (Date.now() - new Date(conv.lastTimestamp).getTime() < 300000);
                   return (
                     <div key={partnerName} onClick={() => navigate(`/messages/${partnerName}`)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', backgroundColor: 'var(--card-bg)', borderRadius: '14px', border: '1px solid var(--border-color)', cursor: 'pointer', boxShadow: 'var(--card-shadow)', transition: 'all 0.2s ease' }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = 'var(--card-shadow-hover)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = 'var(--card-shadow)'; }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', backgroundColor: 'var(--card-bg)', borderRadius: '14px', border: '1px solid var(--border-color)', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; ; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = ''; ; }}>
                       <div style={{ position: 'relative', flexShrink: 0 }}>
                         <Avatar username={partnerName} image={conv.partnerInfo?.profilePhoto} size={50} />
-                        {isOnline && <div style={{ position: 'absolute', bottom: '2px', right: '2px', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: '#31c24d', border: '3px solid var(--card-bg)' }} />}
+                        {isOnline && <div style={{ position: 'absolute', bottom: '2px', right: '2px', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: 'var(--text-secondary)', border: '3px solid var(--card-bg)' }} />}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {conv.partnerInfo?.name && (
@@ -518,7 +518,7 @@ export default function Messages() {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{time}</div>
                       {conv.dmMuted && <BellOff size={12} color="var(--text-tertiary)" />}
-                      {conv.needsAcceptance && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary-color)' }} />}
+                      {conv.needsAcceptance && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: "var(--active-color)" }} />}
                     </div>
                     </div>
                   );
@@ -529,11 +529,11 @@ export default function Messages() {
             /* === COMMUNITIES TAB === */
             joinedLoading ? (
               <div style={{ padding: '64px 16px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               </div>
             ) : joinedCommunities.length === 0 ? (
               <div style={{ padding: '80px 20px', textAlign: 'center' }}>
-                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                   <Users size={36} style={{ opacity: 0.5 }} />
                 </div>
                 <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-color)' }}>No joined communities</h3>
@@ -548,11 +548,11 @@ export default function Messages() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {joinedCommunities.map(c => (
                   <div key={c._id}
-                    style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', backgroundColor: 'var(--card-bg)', borderRadius: '14px', border: '1px solid var(--border-color)', cursor: 'pointer', boxShadow: 'var(--card-shadow)', transition: 'all 0.2s ease' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', backgroundColor: 'var(--card-bg)', borderRadius: '14px', border: '1px solid var(--border-color)', cursor: 'pointer', transition: 'all 0.2s ease' }}
                     onClick={() => navigate(`/community/${c._id}`)}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = 'var(--card-shadow-hover)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = 'var(--card-shadow)'; }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0, border: '1px solid var(--border-color)' }}>
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; ; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = ''; ; }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0, border: '1px solid var(--border-color)' }}>
                       {c.icon || '🏠'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -598,7 +598,7 @@ export default function Messages() {
               value={nicknameInput}
               onChange={(e) => setNicknameInput(e.target.value)}
               placeholder="Enter nickname..."
-              style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', boxSizing: 'border-box', marginBottom: '16px' }}
+              style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', boxSizing: 'border-box', marginBottom: '16px' }}
             />
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               {nicknames[selectedUser] && (
@@ -612,7 +612,7 @@ export default function Messages() {
                     setShowNicknameModal(false);
                   }
                 }}
-                  style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: '#ef4444', cursor: 'pointer' }}>
+                  style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>
                   Remove
                 </button>
               )}
@@ -634,7 +634,7 @@ export default function Messages() {
                   setShowNicknameModal(false);
                 }
               }}
-                style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: 'var(--primary-color)', color: '#fff', cursor: 'pointer' }}>
+                style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: '#fff', cursor: 'pointer' }}>
                 Save
               </button>
             </div>

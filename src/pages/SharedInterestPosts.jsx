@@ -155,7 +155,7 @@ export default function SharedInterestPosts() {
           Back to Discover
         </button>
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-color)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <MessageSquare size={24} color="var(--primary-color)" />
+          <MessageSquare size={24} color="var(--text-color)" />
           Shared Interest Posts
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
@@ -209,7 +209,7 @@ export default function SharedInterestPosts() {
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
                   {post.tags.map(tag => (
                     <span key={tag} style={{
-                      fontSize: '12px', color: 'var(--primary-color)', fontWeight: 500
+                      fontSize: '12px', color: 'var(--text-color)', fontWeight: 500
                     }}>
                       #{tag}
                     </span>

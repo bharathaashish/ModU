@@ -173,7 +173,7 @@ export default function SuggestedConnections() {
           Back to Discover
         </button>
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-color)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Users size={24} color="var(--primary-color)" />
+          <Users size={24} color="var(--text-color)" />
           Suggested Connections
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
@@ -234,7 +234,7 @@ export default function SuggestedConnections() {
                   style={{
                     padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none',
                     cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px',
-                    backgroundColor: u.hasPendingRequest ? 'var(--border-color)' : 'var(--primary-color)',
+                    backgroundColor: u.hasPendingRequest ? 'var(--border-color)' : 'var(--text-color)',
                     color: u.hasPendingRequest ? 'var(--text-secondary)' : '#fff'
                   }}
                 >

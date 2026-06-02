@@ -35,7 +35,7 @@ export default function LikedPosts() {
           <ChevronLeft size={24} />
         </button>
         <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-color)', margin: 0, flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <Heart size={20} fill="var(--error-color)" color="var(--error-color)" />
+          <Heart size={20} fill="var(--text-color)" color="var(--text-color)" />
           Liked Posts
         </h2>
       </div>

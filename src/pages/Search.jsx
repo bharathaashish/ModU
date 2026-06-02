@@ -172,7 +172,7 @@ export default function Search() {
               <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-color)', margin: 0 }}>Recent</h3>
               <button
                 onClick={clearAllRecent}
-                style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '14px', cursor: 'pointer', fontWeight: 500 }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '14px', cursor: 'pointer', fontWeight: 500 }}
               >
                 Clear all
               </button>
@@ -245,7 +245,7 @@ export default function Search() {
                   <button
                     onClick={(e) => handleFollow(u.username, e)}
                     style={{
-                      padding: '6px 16px', backgroundColor: (user?.following?.includes(u.username) || u.hasPendingRequest) ? 'var(--border-color)' : 'var(--primary-color)',
+                      padding: '6px 16px', backgroundColor: (user?.following?.includes(u.username) || u.hasPendingRequest) ? 'var(--border-color)' : 'var(--text-color)',
                       border: 'none', borderRadius: '8px', color: (user?.following?.includes(u.username) || u.hasPendingRequest) ? 'var(--text-secondary)' : 'white',
                       fontWeight: 600, fontSize: '13px', cursor: (user?.following?.includes(u.username) || u.hasPendingRequest) ? 'default' : 'pointer', flexShrink: 0
                     }}

@@ -75,7 +75,7 @@ export default function BlockedUsers() {
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading...</div>
         ) : blockedUsers.length === 0 ? (
           <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
               <Ban size={28} style={{ opacity: 0.5 }} />
             </div>
             <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '6px' }}>No blocked users</h3>

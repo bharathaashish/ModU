@@ -32,7 +32,7 @@ export default function FeedControl() {
 
       <div style={{ flex: 1, width: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column' }}>
         {savedMsg && (
-          <div style={{ padding: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', borderRadius: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 500, marginBottom: '24px' }}>
+          <div style={{ padding: '12px', backgroundColor: 'var(--surface-alt)', color: 'var(--text-color)', borderRadius: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 500, marginBottom: '24px' }}>
             {savedMsg}
           </div>
         )}
@@ -49,7 +49,7 @@ export default function FeedControl() {
               <input 
                 type="radio" name="feedPreference" value={pref} 
                 checked={feedPref === pref} onChange={() => setFeedPref(pref)}
-                style={{ width: '18px', height: '18px', accentColor: 'var(--primary-color)' }}
+                style={{ width: '18px', height: '18px', accentColor: 'var(--text-color)' }}
               />
               <span style={{ fontWeight: 500, fontSize: '16px', color: 'var(--text-color)' }}>{pref}</span>
             </label>
@@ -62,8 +62,8 @@ export default function FeedControl() {
             onClick={handleSave} 
             style={{ 
               padding: '12px 24px', 
-              backgroundColor: 'var(--primary-color)', 
-              color: 'white', 
+              backgroundColor: "var(--active-color)", 
+              color: 'var(--active-text)', 
               borderRadius: '8px', 
               border: 'none', 
               fontWeight: 600, 

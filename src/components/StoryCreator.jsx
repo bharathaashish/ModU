@@ -166,13 +166,13 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
               {showAudiencePicker && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setShowAudiencePicker(false)} />
-                  <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, marginTop: '4px', backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', overflow: 'hidden', minWidth: '160px' }}>
+                  <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, marginTop: '4px', backgroundColor: 'var(--card-bg)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', overflow: 'hidden', minWidth: '160px' }}>
                     <button onClick={() => { setAudience('followers'); setShowAudiencePicker(false); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'followers' ? '#4f6ef7' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'followers' ? 'var(--text-color)' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Users size={14} /> Followers
                     </button>
                     <button onClick={() => { setAudience('close_friends'); setShowAudiencePicker(false); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'close_friends' ? '#4f6ef7' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'close_friends' ? 'var(--text-color)' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Lock size={14} /> Close Friends
                     </button>
                   </div>
@@ -185,7 +185,7 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
             disabled={!media || loading}
             style={{
               padding: '8px 20px',
-              backgroundColor: loading || !media ? 'rgba(255,255,255,0.2)' : '#4f6ef7',
+              backgroundColor: loading || !media ? 'rgba(255,255,255,0.2)' : 'var(--text-color)',
               border: 'none', borderRadius: '8px', color: '#fff',
               fontWeight: 600, fontSize: '14px',
               cursor: loading || !media ? 'not-allowed' : 'pointer',
@@ -211,7 +211,7 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
                 alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
                 cursor: 'pointer', transition: 'border-color 0.2s'
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = '#4f6ef7'}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--text-color)'}
               onMouseLeave={e => e.currentTarget.style.borderColor = '#555'}
             >
               <Image size={40} />
@@ -310,7 +310,7 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
         </div>
       )}
 
-      {error && <div style={{ padding: '12px 16px', color: '#ef4444', fontSize: '13px', textAlign: 'center', flexShrink: 0 }}>{error}</div>}
+      {error && <div style={{ padding: '12px 16px', color: 'var(--text-color)', fontSize: '13px', textAlign: 'center', flexShrink: 0 }}>{error}</div>}
     </div>
   );
 }

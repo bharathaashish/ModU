@@ -115,7 +115,7 @@ export default function Sidebar({ isOpen, onClose }) {
                       <input 
                         type="radio" name="feedPreference" value={pref} 
                         checked={feedPref === pref} onChange={() => setFeedPref(pref)}
-                        style={{ width: '18px', height: '18px', accentColor: 'var(--primary-color)' }}
+                        style={{ width: '18px', height: '18px', accentColor: 'var(--text-color)' }}
                       />
                       <span style={{ fontWeight: 500, fontSize: '14px' }}>{pref}</span>
                     </label>
@@ -135,13 +135,13 @@ export default function Sidebar({ isOpen, onClose }) {
           <button 
             onClick={logout} 
             className="button"
-            style={{ width: '100%', backgroundColor: 'transparent', color: 'var(--error-color)', border: '1px solid var(--error-color)', padding: '12px', fontWeight: 600, display: 'flex', justifyContent: 'center', gap: '8px' }}
+            style={{ width: '100%', backgroundColor: 'transparent', color: 'var(--text-color)', border: '1px solid var(--text-color)', padding: '12px', fontWeight: 600, display: 'flex', justifyContent: 'center', gap: '8px' }}
           >
             <LogOut size={18} /> Log Out
           </button>
 
           {savedMsg && (
-            <div style={{ padding: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', borderRadius: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 500 }}>
+            <div style={{ padding: '12px', backgroundColor: 'var(--surface-alt)', color: 'var(--text-color)', borderRadius: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 500 }}>
               {savedMsg}
             </div>
           )}

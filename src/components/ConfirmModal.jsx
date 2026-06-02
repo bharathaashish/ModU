@@ -23,8 +23,8 @@ export default function ConfirmModal({ isOpen, title, message, confirmLabel = 'D
             onClick={onConfirm}
             className="btn-primary"
             style={{
-              backgroundColor: danger ? '#ef4444' : 'var(--primary-color)',
-              boxShadow: danger ? '0 4px 12px rgba(239,68,68,0.3)' : undefined
+              backgroundColor: danger ? 'var(--text-color)' : 'var(--text-color)',
+              boxShadow: danger ? '0 4px 12px rgba(0,0,0,0.15)' : undefined
             }}
           >
             {confirmLabel}

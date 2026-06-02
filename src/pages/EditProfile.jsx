@@ -174,8 +174,8 @@ export default function EditProfile() {
 
       <div style={{ maxWidth: '520px', margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {/* Messages */}
-        {error && <div style={{ padding: '10px 14px', backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 'var(--radius-sm)', color: 'var(--error-color)', fontSize: '13px' }}>{error}</div>}
-        {saved && <div style={{ padding: '10px 14px', backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 'var(--radius-sm)', color: '#10b981', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {error && <div style={{ padding: '10px 14px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '13px' }}>{error}</div>}
+        {saved && <div style={{ padding: '10px 14px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <CheckCircle2 size={16} /> Profile saved
         </div>}
 
@@ -186,7 +186,7 @@ export default function EditProfile() {
           {photoPreview ? (
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
               <button onClick={handleUploadPhoto} disabled={photoUploading}
-                style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: 'var(--primary-color)', color: '#fff', cursor: photoUploading ? 'not-allowed' : 'pointer', opacity: photoUploading ? 0.6 : 1 }}>
+                style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: '#fff', cursor: photoUploading ? 'not-allowed' : 'pointer', opacity: photoUploading ? 0.6 : 1 }}>
                 {photoUploading ? 'Uploading...' : 'Save Photo'}
               </button>
               <button onClick={() => setPhotoPreview(null)}
@@ -196,12 +196,12 @@ export default function EditProfile() {
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-              <button onClick={handlePhotoClick} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 500, cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button onClick={handlePhotoClick} style={{ background: 'none', border: 'none', color: 'var(--text-color)', fontWeight: 500, cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Camera size={14} /> Change photo
               </button>
               {user?.profilePhoto && (
                 <button onClick={handleRemovePhoto} disabled={photoUploading}
-                  style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 500, cursor: photoUploading ? 'not-allowed' : 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', opacity: photoUploading ? 0.6 : 1 }}>
+                  style={{ background: 'none', border: 'none', color: 'var(--text-color)', fontWeight: 500, cursor: photoUploading ? 'not-allowed' : 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', opacity: photoUploading ? 0.6 : 1 }}>
                   <Trash2 size={14} /> Remove
                 </button>
               )}
@@ -216,13 +216,13 @@ export default function EditProfile() {
             <div>
               <label style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Username</label>
               <input type="text" value={username} onChange={handleUsernameChange}
-                style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--input-bg)', border: `1px solid ${usernameError ? 'var(--error-color)' : 'var(--border-color)'}`, borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', transition: 'border-color 0.15s' }} />
-              {usernameError && <div style={{ color: 'var(--error-color)', fontSize: '12px', marginTop: '4px' }}>{usernameError}</div>}
+                style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--surface-alt)', border: `1px solid ${usernameError ? 'var(--text-color)' : 'var(--border-color)'}`, borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', transition: 'border-color 0.15s' }} />
+              {usernameError && <div style={{ color: 'var(--text-color)', fontSize: '12px', marginTop: '4px' }}>{usernameError}</div>}
             </div>
             <div>
               <label style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Name</label>
               <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your full name"
-                style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', transition: 'border-color 0.15s' }} />
+                style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', transition: 'border-color 0.15s' }} />
             </div>
           </div>
         </div>
@@ -234,18 +234,18 @@ export default function EditProfile() {
             <div>
               <label style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)' }} />
+                style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)' }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Age</label>
                 <input type="number" value={age} onChange={e => setAge(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)' }} />
+                  style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)' }} />
               </div>
               <div>
                 <label style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>Phone</label>
                 <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)' }} />
+                  style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)' }} />
               </div>
             </div>
           </div>
@@ -255,7 +255,7 @@ export default function EditProfile() {
         <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '20px' }}>
           <div style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '10px' }}>Bio</div>
           <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Write a little about yourself..."
-            style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', resize: 'vertical', lineHeight: '1.6', fontFamily: 'var(--font-sans)', transition: 'border-color 0.15s' }} />
+            style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', resize: 'vertical', lineHeight: '1.6', fontFamily: 'var(--font-sans)', transition: 'border-color 0.15s' }} />
         </div>
 
         {/* Photo Visibility card */}
@@ -267,9 +267,9 @@ export default function EditProfile() {
                   { value: 'followers', label: 'Followers Only', desc: 'Only your followers can see your profile photo' },
                 ].map(opt => (
               <label key={opt.value} onClick={() => setPhotoVisibility(opt.value)}
-                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', backgroundColor: photoVisibility === opt.value ? 'var(--hover-bg)' : 'transparent', transition: 'background-color 0.15s' }}>
-                <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: `2px solid ${photoVisibility === opt.value ? 'var(--primary-color)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {photoVisibility === opt.value && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary-color)' }} />}
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', backgroundColor: photoVisibility === opt.value ? 'var(--surface-alt)' : 'transparent', transition: 'background-color 0.15s' }}>
+                <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: `2px solid ${photoVisibility === opt.value ? 'var(--text-color)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {photoVisibility === opt.value && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: "var(--active-color)" }} />}
                 </div>
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-color)' }}>{opt.label}</div>
@@ -282,7 +282,7 @@ export default function EditProfile() {
 
         {/* Save button */}
         <button onClick={handleSave} disabled={saving}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', padding: '12px', backgroundColor: saving ? 'var(--border-color)' : 'var(--primary-color)', border: 'none', borderRadius: 'var(--radius-sm)', color: 'white', fontWeight: 600, fontSize: '14px', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)', transition: 'background-color 0.15s' }}>
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', padding: '12px', backgroundColor: saving ? 'var(--border-color)' : 'var(--text-color)', border: 'none', borderRadius: 'var(--radius-sm)', color: 'var(--active-text)', fontWeight: 600, fontSize: '14px', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)', transition: 'background-color 0.15s' }}>
           <Save size={16} />
           {saving ? 'Saving...' : 'Save Changes'}
         </button>

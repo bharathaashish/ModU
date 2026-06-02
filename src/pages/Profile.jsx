@@ -240,7 +240,7 @@ export default function Profile() {
             <Avatar username={profileUsername} image={profileUser?.profilePhoto} size={72} style={{ margin: '0 auto 16px', border: '2px solid var(--border-color)' }} />
             <h3 style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-color)', margin: '0 0 4px' }}>{profileUser.name || profileUsername}</h3>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px' }}>@{profileUsername}</div>
-            <div style={{ padding: '10px 16px', backgroundColor: 'var(--hover-bg)', borderRadius: '10px', marginBottom: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <div style={{ padding: '10px 16px', backgroundColor: 'var(--surface-alt)', borderRadius: '10px', marginBottom: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
               <Ban size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
               You have blocked this user.
               {profileUser.blockedAt && (
@@ -281,9 +281,9 @@ export default function Profile() {
                   </button>
                   <button onClick={() => navigate('/settings/close-friends')}
                     style={{ padding: '7px 14px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Heart size={14} color="#22c55e" /> Close Friends
+                    <Heart size={14} color="var(--text-color)" /> Close Friends
                   </button>
-                  <button onClick={() => setShowPostModal(true)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--primary-color)', border: 'none', borderRadius: 'var(--radius-sm)', color: '#fff', cursor: 'pointer', transition: 'background-color 0.15s' }}>
+                  <button onClick={() => setShowPostModal(true)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: "var(--active-color)", border: 'none', borderRadius: 'var(--radius-sm)', color: '#fff', cursor: 'pointer', transition: 'background-color 0.15s' }}>
                     <Plus size={18} />
                   </button>
                 </>
@@ -293,7 +293,7 @@ export default function Profile() {
                     <span style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', color: 'var(--text-tertiary)' }}>Blocked</span>
                   ) : (
                     <>
-                      <button onClick={() => handleFollow(profileUsername)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: isFollowing || hasPendingRequest ? '1px solid var(--border-color)' : 'none', backgroundColor: isFollowing || hasPendingRequest ? 'transparent' : 'var(--primary-color)', color: isFollowing || hasPendingRequest ? 'var(--text-secondary)' : '#fff', cursor: 'pointer', transition: 'background-color 0.15s' }}>
+                      <button onClick={() => handleFollow(profileUsername)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: isFollowing || hasPendingRequest ? '1px solid var(--border-color)' : 'none', backgroundColor: isFollowing || hasPendingRequest ? 'transparent' : 'var(--text-color)', color: isFollowing || hasPendingRequest ? 'var(--text-secondary)' : '#fff', cursor: 'pointer', transition: 'background-color 0.15s' }}>
                         {isFollowing ? 'Following' : (hasPendingRequest ? 'Requested' : 'Follow')}
                       </button>
                       <button onClick={() => navigate(`/messages/${profileUsername}`)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>
@@ -328,7 +328,7 @@ export default function Profile() {
                             </button>
                           ) : (
                             <button onClick={() => { setShowActionMenu(false); setShowBlockConfirm(true); }}
-                              style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-color)' }}>
+                              style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-color)' }}>
                               <Ban size={14} /> Block @{profileUsername}
                             </button>
                           )}
@@ -420,7 +420,7 @@ export default function Profile() {
               <div style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '10px' }}>Interests</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {profileUser.interests.map(interest => (
-                  <span key={interest} style={{ padding: '4px 10px', borderRadius: '99px', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', fontSize: '12px', fontWeight: 500 }}>
+                  <span key={interest} style={{ padding: '4px 10px', borderRadius: '99px', border: '1px solid var(--text-color)', color: 'var(--text-color)', fontSize: '12px', fontWeight: 500 }}>
                     {interest}
                   </span>
                 ))}
@@ -472,9 +472,9 @@ export default function Profile() {
                       {menuPostId === post._id && (
                         <>
                           <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setMenuPostId(null)} />
-                          <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', boxShadow: 'var(--elevated-shadow)', minWidth: '150px', overflow: 'hidden' }}>
+                          <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', minWidth: '150px', overflow: 'hidden' }}>
                             <button onClick={(e) => { e.stopPropagation(); setMenuPostId(null); setDeleteTargetId(post._id); }}
-                              style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--error-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500 }}>
+                              style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500 }}>
                               Delete Post
                             </button>
                           </div>

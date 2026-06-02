@@ -97,7 +97,7 @@ export default function Followers() {
                   }}
                   style={{
                     padding: '4px 12px',
-                    backgroundColor: user?.following?.includes(member.username) ? 'var(--border-color)' : 'var(--primary-color)',
+                    backgroundColor: user?.following?.includes(member.username) ? 'var(--border-color)' : 'var(--text-color)',
                     border: 'none',
                     borderRadius: '6px',
                     color: user?.following?.includes(member.username) ? 'var(--text-secondary)' : 'white',

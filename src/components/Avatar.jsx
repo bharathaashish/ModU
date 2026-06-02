@@ -1,5 +1,5 @@
 function getAccent() {
-  return 'var(--primary-color)';
+  return 'var(--text-color)';
 }
 
 export default function Avatar({ username, size = 32, image, style = {}, onClick }) {

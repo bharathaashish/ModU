@@ -46,7 +46,7 @@ export default function EditInterests() {
         </button>
         <h1 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: 'var(--text-color)', flex: 1 }}>Edit Interests</h1>
         <button onClick={handleSave}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', backgroundColor: 'var(--primary-color)', border: 'none', borderRadius: 'var(--radius-md)', color: 'white', fontWeight: 600, fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', backgroundColor: 'var(--active-color)', border: none, borderRadius: 8, color: 'var(--active-text)', fontWeight: 600, fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
           <Save size={16} />
           Save
         </button>
@@ -54,7 +54,7 @@ export default function EditInterests() {
 
       <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {savedMsg && (
-          <div style={{ padding: '12px 16px', backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 'var(--radius-md)', color: '#10b981', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ padding: '12px 16px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-color)', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Check size={18} /> {savedMsg}
           </div>
         )}
@@ -63,7 +63,7 @@ export default function EditInterests() {
           Your Discover feed prioritizes the topics you select, communities you follow, and the discussions you engage with. Keep your interests focused so recommendations stay relevant.
         </div>
 
-        <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '20px', boxShadow: 'var(--card-shadow)' }}>
+        <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '20px',  }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
             <Layers size={16} />
             <span>YOUR INTERESTS</span>
@@ -80,7 +80,7 @@ export default function EditInterests() {
                   const selected = selectedInterests.includes(type.id);
                   return (
                     <button key={type.id} onClick={() => toggleInterest(type.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '20px', border: `1px solid ${selected ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: selected ? 'rgba(0,149,246,0.08)' : 'var(--card-bg)', color: selected ? 'var(--primary-color)' : 'var(--text-color)', fontSize: '13px', fontWeight: selected ? 600 : 500, cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '20px', border: `1px solid ${selected ? 'var(--text-color)' : 'var(--border-color)'}`, backgroundColor: selected ? 'var(--surface-alt)' : 'var(--card-bg)', color: selected ? 'var(--text-color)' : 'var(--text-color)', fontSize: '13px', fontWeight: selected ? 600 : 500, cursor: 'pointer', transition: 'all 0.2s ease' }}>
                       {selected && <Check size={14} />}
                       {type.label}
                     </button>
@@ -92,16 +92,16 @@ export default function EditInterests() {
         </div>
 
         {/* Selection count */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--card-shadow)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)',  }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={18} color="var(--primary-color)" />
+            <Sparkles size={18} color="var(--text-color)" />
             <span style={{ fontSize: '14px', color: 'var(--text-color)' }}>Selected Interests</span>
           </div>
-          <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary-color)' }}>{selectedInterests.length} / {CONTENT_TYPES.length}</span>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>{selectedInterests.length} / {CONTENT_TYPES.length}</span>
         </div>
 
         <button onClick={handleSave}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '14px', backgroundColor: 'var(--primary-color)', border: 'none', borderRadius: 'var(--radius-md)', color: 'white', fontWeight: 600, fontSize: '16px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '14px', backgroundColor: 'var(--active-color)', border: none, borderRadius: 8, color: 'var(--active-text)', fontWeight: 600, fontSize: '16px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
           <Save size={18} />
           Save Changes
         </button>

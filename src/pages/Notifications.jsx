@@ -114,15 +114,15 @@ export default function Notifications() {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'like':
-        return <Heart size={16} fill="#ed4956" color="#ed4956" />;
+        return <Heart size={16} fill="var(--text-color)" color="var(--text-color)" />;
       case 'follow':
-        return <UserPlus size={16} color="var(--primary-color)" />;
+        return <UserPlus size={16} color="var(--text-color)" />;
       case 'follow_request':
-        return <UserPlus size={16} color="#f58529" />;
+        return <UserPlus size={16} color="var(--text-secondary)" />;
       case 'post':
-        return <FileText size={16} color="var(--primary-color)" />;
+        return <FileText size={16} color="var(--text-color)" />;
       case 'message':
-        return <MessageCircle size={16} color="var(--primary-color)" />;
+        return <MessageCircle size={16} color="var(--text-color)" />;
       default:
         return <Bell size={16} color="var(--text-secondary)" />;
     }
@@ -172,7 +172,7 @@ export default function Notifications() {
                 style={{ 
                   padding: '16px',
                   borderBottom: '1px solid var(--border-color)',
-                  backgroundColor: notification.isRead ? 'transparent' : 'rgba(0, 149, 246, 0.05)',
+                  backgroundColor: notification.isRead ? 'transparent' : 'var(--surface-alt)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
@@ -206,8 +206,8 @@ export default function Notifications() {
                       onClick={() => handleAccept(notification.fromUser, notification._id)}
                       disabled={processing[notification._id] === 'accepting'}
                       style={{
-                        padding: '6px 16px', backgroundColor: 'var(--primary-color)', border: 'none',
-                        borderRadius: '6px', color: 'white', fontWeight: 600, fontSize: '13px',
+                        padding: '6px 16px', backgroundColor: "var(--active-color)", border: 'none',
+                        borderRadius: '6px', color: 'var(--active-text)', fontWeight: 600, fontSize: '13px',
                         cursor: processing[notification._id] ? 'not-allowed' : 'pointer',
                         opacity: processing[notification._id] ? 0.5 : 1
                       }}
@@ -232,7 +232,7 @@ export default function Notifications() {
                 {!notification.isRead && notification.type !== 'follow_request' && (
                   <div style={{ 
                     width: '8px', height: '8px', borderRadius: '50%', 
-                    backgroundColor: 'var(--primary-color)', flexShrink: 0
+                    backgroundColor: "var(--active-color)", flexShrink: 0
                   }} />
                 )}
               </div>

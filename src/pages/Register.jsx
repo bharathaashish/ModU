@@ -95,10 +95,10 @@ export default function Register() {
               className="input"
               value={username}
               onChange={handleUsernameChange}
-              style={usernameError ? { borderColor: 'var(--error-color)' } : {}}
+              style={usernameError ? { borderColor: 'var(--text-color)' } : {}}
               required
             />
-            {usernameError && <div style={{ color: 'var(--error-color)', fontSize: '12px', marginTop: '4px' }}>{usernameError}</div>}
+            {usernameError && <div style={{ color: 'var(--text-color)', fontSize: '12px', marginTop: '4px' }}>{usernameError}</div>}
           </div>
           <input
             type="email"

@@ -263,7 +263,7 @@ export default function Discussions() {
                 borderRadius: 'var(--radius-md)', padding: '20px',
                 cursor: 'pointer', transition: 'box-shadow 0.2s ease, transform 0.2s ease'
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary-color)'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text-color)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}>
               {/* Author row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
@@ -275,7 +275,7 @@ export default function Discussions() {
                   <div style={{ position: 'relative', marginLeft: 'auto' }}>
                     <button onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === d._id ? null : d._id); }}
                       style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', display: 'flex', borderRadius: '6px', transition: 'background 0.15s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-alt)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                       <MoreHorizontal size={16} />
                     </button>
@@ -283,8 +283,8 @@ export default function Discussions() {
                       <div style={{ position: 'absolute', right: 0, top: '100%', zIndex: 100, minWidth: '160px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', padding: '4px', marginTop: '4px' }}
                         onClick={e => e.stopPropagation()}>
                         <button onClick={() => { setConfirmDelete(d._id); setMenuOpenId(null); }}
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', border: 'none', background: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', borderRadius: '6px', transition: 'background 0.15s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', border: 'none', background: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', borderRadius: '6px', transition: 'background 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-alt)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                           <Trash2 size={14} />
                           <span>Delete Discussion</span>
@@ -302,7 +302,7 @@ export default function Discussions() {
               {d.tags && d.tags.length > 0 && (
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
                   {d.tags.map((tag, i) => (
-                    <span key={i} style={{ fontSize: '11px', color: 'var(--primary-color)', fontWeight: 500, opacity: 0.8 }}>#{tag}</span>
+                    <span key={i} style={{ fontSize: '11px', color: 'var(--text-color)', fontWeight: 500, opacity: 0.8 }}>#{tag}</span>
                   ))}
                 </div>
               )}
@@ -316,14 +316,14 @@ export default function Discussions() {
 
               {/* Image thumbnail */}
               {d.image && (
-                <div style={{ marginBottom: '10px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', maxHeight: '200px', backgroundColor: 'var(--hover-bg)' }}>
+                <div style={{ marginBottom: '10px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', maxHeight: '200px', backgroundColor: 'var(--surface-alt)' }}>
                   <img src={d.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
               )}
 
               {/* Poll preview */}
               {d.poll && d.poll.options && d.poll.options.length > 0 && (
-                <div style={{ marginBottom: '10px', padding: '10px', backgroundColor: 'var(--hover-bg)', borderRadius: 'var(--radius-sm)' }}>
+                <div style={{ marginBottom: '10px', padding: '10px', backgroundColor: 'var(--surface-alt)', borderRadius: 'var(--radius-sm)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '6px' }}>
                     <BarChart3 size={14} />
                     <span>Poll</span>
@@ -412,11 +412,11 @@ export default function Discussions() {
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
               {imagePreview && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--hover-bg)', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--surface-alt)', width: '100%' }}>
                   <img src={imagePreview} alt="" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '6px' }} />
                   <div style={{ flex: 1, fontSize: '13px', color: 'var(--text-color)' }}>Image attached</div>
-                  <button type="button" onClick={handleRemoveImage} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13px', padding: '4px 8px', borderRadius: '4px', transition: 'background 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'}
+                  <button type="button" onClick={handleRemoveImage} style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', fontSize: '13px', padding: '4px 8px', borderRadius: '4px', transition: 'background 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-alt)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                     Remove
                   </button>
@@ -427,11 +427,11 @@ export default function Discussions() {
             {/* Poll toggle */}
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, color: 'var(--text-color)', marginBottom: pollMode ? '12px' : 0 }}>
-                <input type="checkbox" checked={pollMode} onChange={e => setPollMode(e.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />
+                <input type="checkbox" checked={pollMode} onChange={e => setPollMode(e.target.checked)} style={{ accentColor: 'var(--text-color)' }} />
                 Add a poll
               </label>
               {pollMode && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: 'var(--hover-bg)', borderRadius: 'var(--radius-sm)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: 'var(--surface-alt)', borderRadius: 'var(--radius-sm)' }}>
                   {pollOptions.map((opt, i) => (
                     <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <input className="form-input" style={{ margin: 0, flex: 1 }} placeholder={`Option ${i + 1}`} value={opt} onChange={e => updatePollOption(i, e.target.value)} />
@@ -449,7 +449,7 @@ export default function Discussions() {
               )}
             </div>
 
-            {error && <div style={{ color: '#e74c3c', fontSize: '13px', marginBottom: '12px' }}>{error}</div>}
+            {error && <div style={{ color: 'var(--text-color)', fontSize: '13px', marginBottom: '12px' }}>{error}</div>}
 
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowCreate(false)}>Cancel</button>

@@ -279,7 +279,7 @@ export default function Discover() {
               {userResults.length > 0 && (
                 <div className="discover-widget">
                   <div className="discover-widget-header">
-                    <Users size={20} color="var(--primary-color)" />
+                    <Users size={20} color="var(--text-color)" />
                     <span className="discover-widget-title">Users</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -298,7 +298,7 @@ export default function Discover() {
                           onClick={(e) => handleFollow(e, u.username)}
                           style={{
                             padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '6px', border: 'none', cursor: 'pointer', flexShrink: 0,
-                            backgroundColor: u.hasPendingRequest || user?.following?.includes(u.username) ? 'var(--border-color)' : 'var(--primary-color)',
+                            backgroundColor: u.hasPendingRequest || user?.following?.includes(u.username) ? 'var(--border-color)' : 'var(--text-color)',
                             color: u.hasPendingRequest || user?.following?.includes(u.username) ? 'var(--text-secondary)' : '#fff'
                           }}
                         >
@@ -314,7 +314,7 @@ export default function Discover() {
               {communityResults.length > 0 && (
                 <div className="discover-widget">
                   <div className="discover-widget-header">
-                    <MessageSquare size={20} color="var(--primary-color)" />
+                    <MessageSquare size={20} color="var(--text-color)" />
                     <span className="discover-widget-title">Communities</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -333,7 +333,7 @@ export default function Discover() {
                             {c.isPrivate ? <Lock size={12} color="var(--text-secondary)" /> : <Globe size={12} color="var(--text-secondary)" />}
                           </div>
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--primary-color)', fontWeight: 500, marginTop: '2px' }}>{c.memberCount} members</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-color)', fontWeight: 500, marginTop: '2px' }}>{c.memberCount} members</div>
                         </div>
                         <ChevronRight size={16} color="var(--text-secondary)" />
                       </div>
@@ -350,7 +350,7 @@ export default function Discover() {
           {/* WIDGET 1: Suggested Connections */}
           <div className="discover-widget" onClick={() => navigate('/discover/connections')} style={{ cursor: 'pointer' }}>
             <div className="discover-widget-header">
-              <Users size={20} color="var(--primary-color)" />
+              <Users size={20} color="var(--text-color)" />
               <span className="discover-widget-title" style={{ flex: 1 }}>Suggested Connections</span>
             </div>
             {suggestedUsers.length === 0 ? (
@@ -368,7 +368,7 @@ export default function Discover() {
                     </div>
                     <button
                       onClick={(e) => handleFollow(e, u.username)}
-                      style={{ width: '100%', padding: '6px 0', backgroundColor: user?.following?.includes(u.username) ? 'var(--border-color)' : (u.hasPendingRequest ? 'var(--border-color)' : 'var(--primary-color)'), border: 'none', borderRadius: '6px', color: user?.following?.includes(u.username) || u.hasPendingRequest ? 'var(--text-secondary)' : '#fff', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}
+                      style={{ width: '100%', padding: '6px 0', backgroundColor: user?.following?.includes(u.username) ? 'var(--border-color)' : (u.hasPendingRequest ? 'var(--border-color)' : 'var(--text-color)'), border: 'none', borderRadius: '6px', color: user?.following?.includes(u.username) || u.hasPendingRequest ? 'var(--text-secondary)' : '#fff', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}
                     >
                       {user?.following?.includes(u.username) ? 'Following' : (u.hasPendingRequest ? 'Requested' : 'Follow')}
                     </button>
@@ -381,7 +381,7 @@ export default function Discover() {
           {/* WIDGET 2: Shared Interest Posts */}
           <div className="discover-widget" onClick={() => navigate('/discover/posts')} style={{ cursor: 'pointer' }}>
             <div className="discover-widget-header">
-              <MessageSquare size={20} color="var(--primary-color)" />
+              <MessageSquare size={20} color="var(--text-color)" />
               <span className="discover-widget-title" style={{ flex: 1 }}>Shared Interest Posts</span>
             </div>
             {interestPosts.length === 0 ? (
@@ -408,7 +408,7 @@ export default function Discover() {
           {/* WIDGET 3: Active Discussions */}
           <div className="discover-widget" onClick={() => navigate('/discussions')} style={{ cursor: 'pointer' }}>
             <div className="discover-widget-header">
-            <MessageCircle size={20} color="var(--primary-color)" />
+            <MessageCircle size={20} color="var(--text-color)" />
             <span className="discover-widget-title">Active Discussions</span>
           </div>
             {discussions.length === 0 ? (
@@ -430,7 +430,7 @@ export default function Discover() {
                         <span>{timeAgo(d.createdAt)}</span>
                       </div>
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--primary-color)', fontWeight: 500 }}>{d.comments} {d.comments === 1 ? 'reply' : 'replies'}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-color)', fontWeight: 500 }}>{d.comments} {d.comments === 1 ? 'reply' : 'replies'}</div>
                   </div>
                 ))}
               </div>

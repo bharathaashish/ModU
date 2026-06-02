@@ -98,10 +98,10 @@ export default function PostModal({ isOpen, onClose, onPostSuccess }) {
             disabled={!image || loading}
             style={{
               padding: '8px 16px',
-              backgroundColor: loading || !image ? 'var(--border-color)' : 'var(--primary-color)',
+              backgroundColor: loading || !image ? 'var(--border-color)' : 'var(--text-color)',
               border: 'none',
               borderRadius: '8px',
-              color: 'white',
+              color: 'var(--active-text)',
               fontWeight: 600,
               cursor: loading || !image ? 'not-allowed' : 'pointer'
             }}
@@ -147,7 +147,7 @@ export default function PostModal({ isOpen, onClose, onPostSuccess }) {
                 background: 'rgba(0,0,0,0.7)',
                 border: 'none',
                 borderRadius: '50%',
-                color: 'white',
+                color: 'var(--active-text)',
                 cursor: 'pointer',
                 padding: '8px',
                 display: 'flex',
@@ -189,7 +189,7 @@ export default function PostModal({ isOpen, onClose, onPostSuccess }) {
               rows={3}
             />
           </div>
-        {error && <div style={{ color: '#e74c3c', fontSize: '13px', padding: '0 20px 16px' }}>{error}</div>}
+        {error && <div style={{ color: 'var(--text-color)', fontSize: '13px', padding: '0 20px 16px' }}>{error}</div>}
       </div>
     </div>
   );

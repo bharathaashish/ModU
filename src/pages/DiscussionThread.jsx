@@ -46,7 +46,7 @@ function Poll({ poll, postId, user, onVote }) {
   };
 
   return (
-    <div style={{ marginTop: '16px', padding: '16px', backgroundColor: 'var(--hover-bg)', borderRadius: 'var(--radius-md)' }}>
+    <div style={{ marginTop: '16px', padding: '16px', backgroundColor: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '12px' }}>
         <BarChart3 size={18} />
         <span>Poll</span>
@@ -67,13 +67,13 @@ function Poll({ poll, postId, user, onVote }) {
               {voted && (
                 <div style={{
                   position: 'absolute', top: 0, left: 0, bottom: 0,
-                  width: `${pct}%`, backgroundColor: 'var(--primary-glow)',
+                  width: `${pct}%`, backgroundColor: 'var(--surface-alt)',
                   transition: 'width 0.4s ease', borderRadius: '7px'
                 }} />
               )}
               <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>{opt.text}</span>
-                {voted && <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary-color)' }}>{pct}%</span>}
+                {voted && <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>{pct}%</span>}
               </div>
             </button>
           );
@@ -129,15 +129,15 @@ function CommentVoteButtons({ comment, user, onVote }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
       <button onClick={() => handleClick('upvote')}
-        style={{ background: 'none', border: 'none', cursor: user ? 'pointer' : 'default', padding: '4px', display: 'flex', borderRadius: '4px', color: localUp ? 'var(--primary-color)' : 'var(--text-tertiary)', transition: 'color 0.15s, background 0.15s' }}
-        onMouseEnter={e => { if (user) { e.currentTarget.style.background = 'var(--hover-bg)'; e.currentTarget.style.color = 'var(--primary-color)'; }}}
+        style={{ background: 'none', border: 'none', cursor: user ? 'pointer' : 'default', padding: '4px', display: 'flex', borderRadius: '4px', color: localUp ? 'var(--text-color)' : 'var(--text-tertiary)', transition: 'color 0.15s, background 0.15s' }}
+        onMouseEnter={e => { if (user) { e.currentTarget.style.background = 'var(--surface-alt)'; e.currentTarget.style.color = 'var(--text-color)'; }}}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; if (!localUp) e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
         <ChevronUp size={16} />
       </button>
-      <span style={{ fontSize: '12px', fontWeight: 700, color: localScore > 0 ? 'var(--primary-color)' : localScore < 0 ? '#ef4444' : 'var(--text-secondary)', lineHeight: 1, minWidth: '18px', textAlign: 'center' }}>{localScore}</span>
+      <span style={{ fontSize: '12px', fontWeight: 700, color: localScore > 0 ? 'var(--text-color)' : localScore < 0 ? 'var(--text-color)' : 'var(--text-secondary)', lineHeight: 1, minWidth: '18px', textAlign: 'center' }}>{localScore}</span>
       <button onClick={() => handleClick('downvote')}
-        style={{ background: 'none', border: 'none', cursor: user ? 'pointer' : 'default', padding: '4px', display: 'flex', borderRadius: '4px', color: localDown ? '#ef4444' : 'var(--text-tertiary)', transition: 'color 0.15s, background 0.15s' }}
-        onMouseEnter={e => { if (user) { e.currentTarget.style.background = 'var(--hover-bg)'; e.currentTarget.style.color = '#ef4444'; }}}
+        style={{ background: 'none', border: 'none', cursor: user ? 'pointer' : 'default', padding: '4px', display: 'flex', borderRadius: '4px', color: localDown ? 'var(--text-color)' : 'var(--text-tertiary)', transition: 'color 0.15s, background 0.15s' }}
+        onMouseEnter={e => { if (user) { e.currentTarget.style.background = 'var(--surface-alt)'; e.currentTarget.style.color = 'var(--text-color)'; }}}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; if (!localDown) e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
         <ChevronDown size={16} />
       </button>
@@ -162,7 +162,7 @@ function CommentItem({ comment, user, onVote, onReply, onDelete, depth, onNaviga
             {user && user.username === comment.username && onDelete && (
               <button onClick={() => onDelete(comment._id)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--text-tertiary)', fontSize: '11px', fontWeight: 500, borderRadius: '4px', transition: 'color 0.15s, background 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'var(--hover-bg)'; }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-color)'; e.currentTarget.style.background = 'var(--surface-alt)'; }}
                 onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-tertiary)'; e.currentTarget.style.background = 'transparent'; }}>
                 <Trash2 size={12} /> Delete
               </button>
@@ -170,7 +170,7 @@ function CommentItem({ comment, user, onVote, onReply, onDelete, depth, onNaviga
             {user && (
               <button onClick={() => onReply(comment._id, comment.username)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--text-tertiary)', fontSize: '11px', fontWeight: 500, borderRadius: '4px', transition: 'color 0.15s, background 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.color = 'var(--primary-color)'; e.currentTarget.style.background = 'var(--hover-bg)'; }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-color)'; e.currentTarget.style.background = 'var(--surface-alt)'; }}
                 onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-tertiary)'; e.currentTarget.style.background = 'transparent'; }}>
                 <Reply size={12} /> Reply
               </button>
@@ -186,7 +186,7 @@ function CommentItem({ comment, user, onVote, onReply, onDelete, depth, onNaviga
               onDelete={onDelete} depth={depth + 1} onNavigate={onNavigate} allReplies={allReplies} />
           ))}
           <button onClick={() => setShowReplies(!showReplies)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', color: 'var(--primary-color)', fontSize: '11px', fontWeight: 500, marginTop: '2px', transition: 'opacity 0.15s' }}>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', color: 'var(--text-color)', fontSize: '11px', fontWeight: 500, marginTop: '2px', transition: 'opacity 0.15s' }}>
             {showReplies ? '− Hide replies' : `+ ${children.length} ${children.length === 1 ? 'reply' : 'replies'}`}
           </button>
         </div>
@@ -404,15 +404,15 @@ export default function DiscussionThread() {
             <div style={{ position: 'relative' }}>
               <button onClick={() => setShowMenu(!showMenu)}
                 style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', display: 'flex', borderRadius: '6px', transition: 'background 0.15s' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-alt)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 <MoreHorizontal size={18} />
               </button>
               {showMenu && (
                 <div style={{ position: 'absolute', right: 0, top: '100%', zIndex: 100, minWidth: '160px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', padding: '4px', marginTop: '4px' }}>
                   <button onClick={() => { setConfirmDelete(true); setShowMenu(false); }}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', border: 'none', background: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', borderRadius: '6px', transition: 'background 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', border: 'none', background: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', borderRadius: '6px', transition: 'background 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-alt)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                     <Trash2 size={14} />
                     <span>Delete Discussion</span>
@@ -427,7 +427,7 @@ export default function DiscussionThread() {
         {post.tags && post.tags.length > 0 && (
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
             {post.tags.map((tag, i) => (
-              <span key={i} style={{ fontSize: '12px', color: 'var(--primary-color)', fontWeight: 500, opacity: 0.8 }}>#{tag}</span>
+              <span key={i} style={{ fontSize: '12px', color: 'var(--text-color)', fontWeight: 500, opacity: 0.8 }}>#{tag}</span>
             ))}
           </div>
         )}
@@ -453,8 +453,8 @@ export default function DiscussionThread() {
         {/* Actions row — ❤️ like + reply count */}
         <div className="thread-actions" style={{ marginTop: '16px', marginBottom: 0 }}>
           <button className="thread-action-btn" onClick={handleLike} disabled={!user}
-            style={{ color: isLiked ? 'var(--error-color)' : 'var(--text-secondary)', cursor: user ? 'pointer' : 'default' }}>
-            <Heart size={16} fill={isLiked ? 'var(--error-color)' : 'none'} />
+            style={{ color: isLiked ? 'var(--text-color)' : 'var(--text-secondary)', cursor: user ? 'pointer' : 'default' }}>
+            <Heart size={16} fill={isLiked ? 'var(--text-color)' : 'none'} />
             <span>{post.likes || 0} {post.likes === 1 ? 'like' : 'likes'}</span>
           </button>
           <div className="thread-action-btn" style={{ cursor: 'default' }}>
@@ -467,7 +467,7 @@ export default function DiscussionThread() {
       {/* Reply input */}
       <div style={{ marginBottom: '0' }}>
         {replyingTo && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '12px', color: 'var(--primary-color)', fontWeight: 500, backgroundColor: 'var(--hover-bg)', borderRadius: '8px 8px 0 0', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '12px', color: 'var(--text-color)', fontWeight: 500, backgroundColor: 'var(--surface-alt)', borderRadius: '8px 8px 0 0', borderBottom: '1px solid var(--border-color)' }}>
             <Reply size={12} />
             <span>Replying to <strong>{replyingTo.username}</strong></span>
             <button onClick={() => { setReplyingTo(null); setReplyText(''); }}

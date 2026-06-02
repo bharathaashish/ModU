@@ -224,7 +224,7 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
             position: 'absolute', top: '12px', right: '12px',
             background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%',
             width: '36px', height: '36px', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', cursor: 'pointer', color: 'white', zIndex: 10
+            justifyContent: 'center', cursor: 'pointer', color: 'var(--active-text)', zIndex: 10
           }}>
           <X size={20} />
         </button>
@@ -245,7 +245,7 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
                 if (res.ok) { const updatedUser = await res.json(); updateUser(updatedUser); }
               } catch (err) { console.error('Follow error', err); }
             }}
-              style={{ padding: '4px 12px', backgroundColor: user?.following?.includes(post.username) ? 'var(--border-color)' : 'var(--primary-color)', border: 'none', borderRadius: '6px', color: user?.following?.includes(post.username) ? 'var(--text-secondary)' : 'white', fontWeight: 600, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
+              style={{ padding: '4px 12px', backgroundColor: user?.following?.includes(post.username) ? 'var(--border-color)' : 'var(--text-color)', border: 'none', borderRadius: '6px', color: user?.following?.includes(post.username) ? 'var(--text-secondary)' : 'white', fontWeight: 600, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
               {user?.following?.includes(post.username) ? 'Following' : 'Follow'}
             </button>
           )}
@@ -259,7 +259,7 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
                   <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setShowMenu(false)} />
                   <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: '160px', overflow: 'hidden' }}>
                     <button onClick={() => { setShowMenu(false); setShowDeleteConfirm(true); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontWeight: 500 }}>
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontWeight: 500 }}>
                       Delete Post
                     </button>
                   </div>
@@ -294,13 +294,13 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
         {/* Engagement Row */}
         <div style={{ padding: '12px 16px', display: 'flex', gap: '16px', borderBottom: '1px solid var(--border-color)' }}>
           <button onClick={handleLike} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-            <Heart size={26} style={{ color: isLiked ? '#ed4956' : 'var(--text-color)', fill: isLiked ? '#ed4956' : 'none', transition: 'all 0.2s' }} />
+            <Heart size={26} style={{ color: isLiked ? 'var(--text-color)' : 'var(--text-color)', fill: isLiked ? 'var(--text-color)' : 'none', transition: 'all 0.2s' }} />
           </button>
           <button onClick={() => setShowComments(!showComments)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-            <MessageCircle size={26} style={{ color: showComments ? 'var(--primary-color)' : 'var(--text-color)' }} />
+            <MessageCircle size={26} style={{ color: showComments ? 'var(--text-color)' : 'var(--text-color)' }} />
           </button>
           <button onClick={() => { setShowShareMenu(!showShareMenu); setShowComments(false); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-            <Share2 size={26} style={{ color: showShareMenu ? 'var(--primary-color)' : 'var(--text-color)' }} />
+            <Share2 size={26} style={{ color: showShareMenu ? 'var(--text-color)' : 'var(--text-color)' }} />
           </button>
           <div style={{ flex: 1 }} />
           <button onClick={handleSave} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
@@ -315,7 +315,7 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
           ) : (
             <span>{likeCount} likes</span>
           )}
-          {saveSuccess && <span style={{ marginLeft: '8px', color: 'var(--primary-color)', fontSize: '12px', fontWeight: 500 }}>Post saved!</span>}
+          {saveSuccess && <span style={{ marginLeft: '8px', color: 'var(--text-color)', fontSize: '12px', fontWeight: 500 }}>Post saved!</span>}
         </div>
 
         {/* Post Content */}
@@ -330,7 +330,7 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
         {showShareMenu && (
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
             <button onClick={handleShare}
-              style={{ width: '100%', padding: '10px 16px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>
+              style={{ width: '100%', padding: '10px 16px', backgroundColor: "var(--active-color)", color: 'var(--active-text)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>
               {shareCopied ? 'Link Copied!' : 'Copy Link'}
             </button>
           </div>
@@ -340,14 +340,14 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
         {showComments && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             {/* Comment input at top of comments area */}
-            <div style={{ padding: '12px 16px', display: 'flex', gap: '10px', alignItems: 'center', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--hover-bg)' }}>
+            <div style={{ padding: '12px 16px', display: 'flex', gap: '10px', alignItems: 'center', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--surface-alt)' }}>
               <Avatar username={user?.username} size={24} />
               <input type="text" placeholder="Add a comment..." value={newComment}
                 onChange={e => setNewComment(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleComment()}
                 style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '20px', backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '13px', outline: 'none' }} />
               <button onClick={handleComment} disabled={!newComment.trim()}
-                style={{ padding: '6px 14px', backgroundColor: newComment.trim() ? 'var(--primary-color)' : 'var(--border-color)', color: 'white', border: 'none', borderRadius: '20px', fontWeight: 600, cursor: newComment.trim() ? 'pointer' : 'default', fontSize: '12px' }}>
+                style={{ padding: '6px 14px', backgroundColor: newComment.trim() ? 'var(--text-color)' : 'var(--border-color)', color: 'var(--active-text)', border: 'none', borderRadius: '20px', fontWeight: 600, cursor: newComment.trim() ? 'pointer' : 'default', fontSize: '12px' }}>
                 Post
               </button>
             </div>
@@ -374,7 +374,7 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
                           </div>
                           <button onClick={() => handleCommentLike(comment._id)}
                             style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
-                            <Heart size={14} style={{ color: isLiked ? '#ed4956' : 'var(--text-secondary)', fill: isLiked ? '#ed4956' : 'none', transition: 'all 0.2s' }} />
+                            <Heart size={14} style={{ color: isLiked ? 'var(--text-color)' : 'var(--text-secondary)', fill: isLiked ? 'var(--text-color)' : 'none', transition: 'all 0.2s' }} />
                             {(comment.likes || 0) > 0 && (
                               <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{comment.likes}</span>
                             )}
@@ -386,7 +386,7 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
                   {!showAllComments && sortedComments.length > 3 && (
                     <button onClick={() => setShowAllComments(true)}
                       style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', textAlign: 'left', transition: 'color 0.15s' }}
-                      onMouseEnter={e => e.currentTarget.style.color = 'var(--primary-color)'}
+                      onMouseEnter={e => e.currentTarget.style.color = 'var(--text-color)'}
                       onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
                       View all {sortedComments.length} comments
                     </button>

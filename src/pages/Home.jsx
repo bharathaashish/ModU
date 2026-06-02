@@ -307,7 +307,7 @@ export default function Home() {
                       onClick={(e) => { e.stopPropagation(); setShowMenu(false); setShowDeleteConfirm(true); }}
                       style={{
                         width: '100%', padding: '10px 14px', background: 'none', border: 'none',
-                        color: '#ef4444', fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontWeight: 500
+                        color: 'var(--text-color)', fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontWeight: 500
                       }}
                     >
                       Delete Post
@@ -344,7 +344,7 @@ export default function Home() {
             >
               <Heart 
                 size={24} 
-                style={{ cursor: 'pointer', color: isLiked ? 'var(--error-color)' : 'var(--text-color)', fill: isLiked ? 'var(--error-color)' : 'none', transition: 'all 0.2s' }} 
+                style={{ cursor: 'pointer', color: isLiked ? 'var(--text-color)' : 'var(--text-color)', fill: isLiked ? 'var(--text-color)' : 'none', transition: 'all 0.2s' }} 
               />
             </button>
             <button 
@@ -418,7 +418,7 @@ export default function Home() {
           <div style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => setShowStoryCreator(true)}>
             <div className="story-circle">
               <div className="story-circle-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)' }}>
-                <Plus size={20} color="var(--primary-color)" strokeWidth={2.5} />
+                <Plus size={20} color="var(--text-color)" strokeWidth={2.5} />
               </div>
             </div>
             <span style={{ fontSize: '10px', display: 'block', textAlign: 'center', marginTop: '4px', color: 'var(--text-secondary)' }}>Your Story</span>
@@ -435,10 +435,10 @@ export default function Home() {
               localStorage.setItem('viewedStories', JSON.stringify(viewed));
               navigate(`/profile/${story.author}`);
             }}>
-              <div className={`story-circle${viewed ? ' viewed' : ''}`} style={{ background: story.audience === 'close_friends' ? '#22c55e' : '' }}>
+              <div className={`story-circle${viewed ? ' viewed' : ''}`} style={{ background: story.audience === 'close_friends' ? 'var(--text-color)' : '' }}>
                 <div className="story-circle-inner" style={{ backgroundImage: story.media ? `url(${story.media})` : 'none' }} />
                 {story.audience === 'close_friends' && (
-                  <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--text-color)', border: '2px solid var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Lock size={8} color="#fff" />
                   </div>
                 )}
@@ -482,12 +482,11 @@ export default function Home() {
             width: '56px',
             height: '56px',
             borderRadius: '50%',
-            backgroundColor: 'var(--primary-color)',
+            backgroundColor: "var(--active-color)",
             border: 'none',
-            color: 'white',
+            color: 'var(--active-text)',
             fontSize: '24px',
             cursor: 'pointer',
-            boxShadow: 'var(--card-shadow)',
             zIndex: 999,
             display: 'flex',
             alignItems: 'center',
