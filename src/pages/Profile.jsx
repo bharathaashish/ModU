@@ -306,7 +306,7 @@ export default function Profile() {
                     style={{ padding: '7px 14px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Heart size={14} color="var(--text-color)" /> Close Friends
                   </button>
-                  <button onClick={() => setShowPostModal(true)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: "var(--active-color)", border: 'none', borderRadius: 'var(--radius-sm)', color: '#fff', cursor: 'pointer', transition: 'background-color 0.15s' }}>
+                  <button onClick={() => setShowPostModal(true)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: "var(--active-color)", border: 'none', borderRadius: 'var(--radius-sm)', color: 'var(--active-text)', cursor: 'pointer', transition: 'background-color 0.15s' }}>
                     <Plus size={18} />
                   </button>
                 </>

@@ -25,16 +25,17 @@ export default function Saved() {
       });
   }, [user]);
 
-  if (loading) return <div className="app-container" style={{ justifyContent: 'center', minHeight: 'calc(100vh - 120px)' }}><div>Loading...</div></div>;
+  if (loading) return <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>;
 
   return (
-    <div className="app-container" style={{ padding: '16px', justifyContent: 'flex-start' }}>
-      <div style={{ padding: '16px', display: 'flex', position: 'sticky', top: 0, zIndex: 10, alignItems: 'center', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)' }}>
-        <button onClick={handleBack} style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '4px', marginRight: '16px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '0.5px solid var(--divider-color)', backgroundColor: 'var(--card-bg)', position: 'sticky', top: 0, zIndex: 10 }}>
+        <button onClick={handleBack} style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '4px', marginRight: '16px', display: 'flex' }}>
           <ChevronLeft size={24} />
         </button>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-color)', margin: 0, flex: 1, textAlign: 'center' }}>Saved</h2>
+        <h2 style={{ fontSize: 'var(--fs-lg)', margin: 0, fontWeight: 500, color: 'var(--text-color)' }}>Saved</h2>
       </div>
+      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
 
       {savedPosts.length === 0 ? (
         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '64px 20px' }}>
@@ -54,6 +55,7 @@ export default function Saved() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

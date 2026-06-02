@@ -325,7 +325,7 @@ export default function Messages() {
                         style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Ban size={14} /> Unblock @{selectedUser}
                       </button>
-                    ) : (
+                    ) : (<>
                       <button onClick={() => { setShowConvOptions(false); setShowBlockConfirm(true); }}
                         style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Ban size={14} /> Block @{selectedUser}
@@ -338,9 +338,7 @@ export default function Messages() {
                       style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e74c3c', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <X size={14} /> Delete Chat
                     </button>
-                  </div>
-                </>
-              )}
+                    </>)}
                   </div>
                 </>
               )}

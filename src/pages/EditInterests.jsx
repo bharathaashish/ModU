@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Layers, Check, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -42,6 +42,14 @@ export default function EditInterests() {
     return map;
   }, []);
 
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', paddingBottom: '100px' }}>
       {/* Header */}
@@ -51,7 +59,7 @@ export default function EditInterests() {
         </button>
         <h1 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: 'var(--text-color)', flex: 1 }}>Edit Interests</h1>
         <button onClick={handleSave}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', backgroundColor: 'var(--active-color)', border: none, borderRadius: 8, color: 'var(--active-text)', fontWeight: 600, fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', backgroundColor: 'var(--active-color)', border: 'none', borderRadius: 8, color: 'var(--active-text)', fontWeight: 600, fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
           <Save size={16} />
           Save
         </button>
@@ -106,7 +114,7 @@ export default function EditInterests() {
         </div>
 
         <button onClick={handleSave}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '14px', backgroundColor: 'var(--active-color)', border: none, borderRadius: 8, color: 'var(--active-text)', fontWeight: 600, fontSize: '16px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '14px', backgroundColor: 'var(--active-color)', border: 'none', borderRadius: 8, color: 'var(--active-text)', fontWeight: 600, fontSize: '16px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
           <Save size={18} />
           Save Changes
         </button>

@@ -21,16 +21,15 @@ export default function FeedControl() {
   };
 
   return (
-    <div className="app-container" style={{ padding: 0, justifyContent: 'flex-start', minHeight: '100vh', backgroundColor: 'var(--bg-color)' }}>
-      {/* Top Bar */}
-      <div style={{ display: 'flex', position: 'sticky', top: 0, zIndex: 10, alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)' }}>
-        <button onClick={() => navigate('/settings')} style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '4px', marginRight: '16px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '0.5px solid var(--divider-color)', backgroundColor: 'var(--card-bg)', position: 'sticky', top: 0, zIndex: 10 }}>
+        <button onClick={() => navigate('/settings')} style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '4px', marginRight: '16px', display: 'flex' }}>
           <ArrowLeft size={24} />
         </button>
-        <h2 style={{ fontSize: '18px', margin: 0, fontWeight: 600, color: 'var(--text-color)' }}>Feed Control</h2>
+        <h2 style={{ fontSize: 'var(--fs-lg)', margin: 0, fontWeight: 500, color: 'var(--text-color)' }}>Feed Control</h2>
       </div>
 
-      <div style={{ flex: 1, width: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column' }}>
         {savedMsg && (
           <div style={{ padding: '12px', backgroundColor: 'var(--surface-alt)', color: 'var(--text-color)', borderRadius: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 500, marginBottom: '24px' }}>
             {savedMsg}
