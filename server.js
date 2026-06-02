@@ -173,7 +173,12 @@ const UserSchema = new mongoose.Schema({
     expiresAt: { type: Date, default: null }
   }],
   closeFriends: [{ type: String }],
-  nicknames: [{ partner: String, nickname: String }]
+  nicknames: [{ partner: String, nickname: String }],
+  acceptedConversations: [{
+    partner: String,
+    acceptedAt: { type: Date, default: Date.now }
+  }],
+  hiddenConversations: [{ partner: String }],
 });
 
 const PollOptionSchema = new mongoose.Schema({
@@ -245,7 +250,11 @@ const MessageSchema = new mongoose.Schema({
   receiver: { type: String, required: true },
   content: { type: String, default: '' },
   image: { type: String, default: null },
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
+  deletedFor: [{ type: String }],
+  isDeleted: { type: Boolean, default: false },
+  editedAt: { type: Date },
+  editHistory: [{ content: String, editedAt: Date }]
 });
 
 const MessageRequestSchema = new mongoose.Schema({
@@ -308,8 +317,9 @@ const HubSchema = new mongoose.Schema({
 const StorySchema = new mongoose.Schema({
   author: { type: String, required: true },
   media: { type: String, required: true },
+  mediaType: { type: String, enum: ['image', 'video'], default: 'image' },
   caption: { type: String, default: '' },
-  audience: { type: String, enum: ['followers', 'close_friends'], default: 'followers' },
+  audience: { type: String, enum: ['public', 'followers', 'close_friends'], default: 'followers' },
   viewers: [{ type: String }],
   reactions: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
@@ -1504,15 +1514,16 @@ app.get('/api/messages/:user1/:user2', async (req, res) => {
     const u1Blocked = (user1Doc?.blockedUsers || []).find(b => b.username === user2);
     const u2Blocked = (user2Doc?.blockedUsers || []).find(b => b.username === user1);
     if (u1Blocked || u2Blocked) {
-      return res.json([]);
+      return res.json({ messages: [], needsAcceptance: false });
     }
-    // Fetch messages
-    const messages = await Message.find({
+    // Fetch messages (excluding those deleted for viewer)
+    const allMessages = await Message.find({
       $or: [
         { sender: user1, receiver: user2 },
         { sender: user2, receiver: user1 }
       ]
     }).sort({ timestamp: 1 });
+    const messages = allMessages.filter(m => !(m.deletedFor || []).includes(user1));
     // Check if viewer (user1) needs to accept messages from partner (user2)
     const partnerDoc = await User.findOne({ username: user2 }).select('following').lean();
     const viewerDoc = await User.findOne({ username: user1 }).select('following acceptedConversations').lean();
@@ -1628,9 +1639,10 @@ app.get('/api/conversations/:username', async (req, res) => {
         dmMutedSet.add(m.username);
       }
     }
-    let filtered = conversations.filter(c => !blockedSet.has(c.partner));
-    // Attach needsAcceptance + dmMuted flags
-    const currentFullUser = await User.findOne({ username }).select('following acceptedConversations').lean();
+    // Filter hidden conversations (deleted chats)
+    const currentFullUser = await User.findOne({ username }).select('following acceptedConversations hiddenConversations').lean();
+    const hiddenSet = new Set((currentFullUser?.hiddenConversations || []).map(h => h.partner));
+    let filtered = conversations.filter(c => !blockedSet.has(c.partner) && !hiddenSet.has(c.partner));
     const partnerNames = filtered.map(c => c.partner);
     const partners = await User.find({ username: { $in: partnerNames } }).select('username following').lean();
     const partnerFollowMap = {};
@@ -1647,6 +1659,76 @@ app.get('/api/conversations/:username', async (req, res) => {
     res.json(filtered);
   } catch (err) {
     console.error('Conversations error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE CHAT (hide conversation from user's inbox)
+app.post('/api/conversations/:username/:partner/delete', async (req, res) => {
+  try {
+    const { username, partner } = req.params;
+    await User.updateOne(
+      { username },
+      { $addToSet: { hiddenConversations: { partner } } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE MESSAGE FOR ME
+app.post('/api/messages/:messageId/delete/:username', async (req, res) => {
+  try {
+    const { messageId, username } = req.params;
+    await Message.updateOne(
+      { _id: messageId },
+      { $addToSet: { deletedFor: username } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE MESSAGE FOR EVERYONE (within 30 min)
+app.post('/api/messages/:messageId/delete-everyone', async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const msg = await Message.findById(messageId);
+    if (!msg) return res.status(404).json({ error: 'Message not found' });
+    const age = Date.now() - new Date(msg.timestamp).getTime();
+    if (age > 30 * 60 * 1000) {
+      return res.status(403).json({ error: 'Time limit expired' });
+    }
+    msg.isDeleted = true;
+    msg.content = 'This message was deleted';
+    msg.image = null;
+    msg.deletedFor = [];
+    await msg.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// EDIT MESSAGE (within 30 min)
+app.put('/api/messages/:messageId/edit', async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { content } = req.body;
+    const msg = await Message.findById(messageId);
+    if (!msg) return res.status(404).json({ error: 'Message not found' });
+    const age = Date.now() - new Date(msg.timestamp).getTime();
+    if (age > 30 * 60 * 1000) {
+      return res.status(403).json({ error: 'Time limit expired' });
+    }
+    msg.editHistory.push({ content: msg.content, editedAt: new Date() });
+    msg.content = content;
+    msg.editedAt = new Date();
+    await msg.save();
+    res.json({ success: true, data: msg });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -2790,9 +2872,15 @@ app.get('/api/channel-messages/:communityId/:channelName', async (req, res) => {
 // STORIES — independent from posts
 app.post('/api/stories', async (req, res) => {
   try {
-    const { author, media, caption, audience } = req.body;
+    const { author, media, mediaType, caption, audience } = req.body;
     if (!author || !media) return res.status(400).json({ error: 'Author and media required' });
-    const story = new Story({ author, media, caption: caption || '', audience: audience || 'followers' });
+    const detectedType = mediaType || (media.startsWith('data:video/') ? 'video' : 'image');
+    const story = new Story({
+      author, media,
+      mediaType: detectedType,
+      caption: caption || '',
+      audience: audience || 'followers'
+    });
     await story.save();
     res.json(story);
   } catch (err) {
@@ -2836,6 +2924,73 @@ app.get('/api/stories', async (req, res) => {
         stories = stories.filter(s => !blockedSet.has(s.author));
       }
     }
+    // Enrich with author profile photos
+    const authors = [...new Set(stories.map(s => s.author))];
+    const authorUsers = await User.find({ username: { $in: authors } }).select('username profilePhoto').lean();
+    const photoMap = {};
+    for (const u of authorUsers) photoMap[u.username] = u.profilePhoto || '';
+    stories = stories.map(s => ({ ...s, profilePhoto: photoMap[s.author] || '' }));
+
+    res.json(stories);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get stories for a specific user (profile page)
+app.get('/api/stories/user/:username', async (req, res) => {
+  try {
+    const now = new Date();
+    const { currentUsername } = req.query;
+    const targetUsername = req.params.username;
+
+    let stories = await Story.find({
+      author: targetUsername,
+      expiresAt: { $gt: now }
+    }).sort({ createdAt: -1 }).lean();
+
+    // Privacy checks
+    if (currentUsername && targetUsername !== currentUsername) {
+      const targetUser = await User.findOne({ username: targetUsername }).select('isPrivate followers closeFriends').lean();
+      if (targetUser) {
+        const isOwner = currentUsername === targetUsername;
+        const isFollower = (targetUser.followers || []).includes(currentUsername);
+        const isCloseFriend = (targetUser.closeFriends || []).includes(currentUsername);
+        const isFollowing = isOwner || isFollower;
+
+        if (targetUser.isPrivate && !isFollower && !isOwner) {
+          return res.json([]);
+        }
+
+        stories = stories.filter(s => {
+          // Owner sees all
+          if (isOwner) return true;
+          // Public audience: visible if profile access is granted (passed private check)
+          if (s.audience === 'public') return true;
+          // Followers audience: only followers
+          if (s.audience === 'followers' && isFollower) return true;
+          // Close friends audience: only close friends
+          if (s.audience === 'close_friends' && isCloseFriend) return true;
+          return false;
+        });
+      }
+    }
+
+    // Block filter
+    if (currentUsername) {
+      const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers').lean();
+      const blockedSet = new Set((currentUser?.blockedUsers || []).map(b => b.username));
+      const blockers = await User.find({ 'blockedUsers.username': currentUsername }).select('username').lean();
+      blockers.forEach(b => blockedSet.add(b.username));
+      if (blockedSet.size > 0) {
+        stories = stories.filter(s => !blockedSet.has(s.author));
+      }
+    }
+
+    // Enrich with author profile photo
+    const authorUser = await User.findOne({ username: targetUsername }).select('profilePhoto').lean();
+    stories = stories.map(s => ({ ...s, profilePhoto: authorUser?.profilePhoto || '' }));
+
     res.json(stories);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -2848,7 +3003,8 @@ app.post('/api/stories/:id/view', async (req, res) => {
     if (!username) return res.status(400).json({ error: 'Username required' });
     const story = await Story.findById(req.params.id);
     if (!story) return res.status(404).json({ error: 'Story not found' });
-    if (!story.viewers.includes(username)) {
+    // Don't count the owner viewing their own story
+    if (story.author !== username && !story.viewers.includes(username)) {
       story.viewers.push(username);
       await story.save();
     }

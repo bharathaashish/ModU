@@ -245,7 +245,7 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
                 if (res.ok) { const updatedUser = await res.json(); updateUser(updatedUser); }
               } catch (err) { console.error('Follow error', err); }
             }}
-              style={{ padding: '4px 12px', backgroundColor: user?.following?.includes(post.username) ? 'var(--border-color)' : 'var(--text-color)', border: 'none', borderRadius: '6px', color: user?.following?.includes(post.username) ? 'var(--text-secondary)' : 'white', fontWeight: 600, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
+              style={{ padding: '4px 12px', backgroundColor: user?.following?.includes(post.username) ? 'var(--border-color)' : 'var(--text-color)', border: 'none', borderRadius: '6px', color: user?.following?.includes(post.username) ? 'var(--text-secondary)' : 'var(--active-text)', fontWeight: 600, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
               {user?.following?.includes(post.username) ? 'Following' : 'Follow'}
             </button>
           )}

@@ -246,7 +246,7 @@ export default function Search() {
                     onClick={(e) => handleFollow(u.username, e)}
                     style={{
                       padding: '6px 16px', backgroundColor: (user?.following?.includes(u.username) || u.hasPendingRequest) ? 'var(--border-color)' : 'var(--text-color)',
-                      border: 'none', borderRadius: '8px', color: (user?.following?.includes(u.username) || u.hasPendingRequest) ? 'var(--text-secondary)' : 'white',
+                      border: 'none', borderRadius: '8px', color: (user?.following?.includes(u.username) || u.hasPendingRequest) ? 'var(--text-secondary)' : 'var(--active-text)',
                       fontWeight: 600, fontSize: '13px', cursor: (user?.following?.includes(u.username) || u.hasPendingRequest) ? 'default' : 'pointer', flexShrink: 0
                     }}
                   >

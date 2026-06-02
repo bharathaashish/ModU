@@ -235,7 +235,7 @@ export default function SuggestedConnections() {
                     padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none',
                     cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px',
                     backgroundColor: u.hasPendingRequest ? 'var(--border-color)' : 'var(--text-color)',
-                    color: u.hasPendingRequest ? 'var(--text-secondary)' : '#fff'
+                    color: u.hasPendingRequest ? 'var(--text-secondary)' : 'var(--active-text)'
                   }}
                 >
                   {u.hasPendingRequest ? <UserPlus size={14} /> : <UserCheck size={14} />}

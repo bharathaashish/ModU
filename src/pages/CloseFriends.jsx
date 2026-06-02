@@ -194,7 +194,7 @@ export default function CloseFriends() {
                       {c.name && <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>@{c.username}</div>}
                     </div>
                     <button onClick={() => handleAdd(c.username)}
-                      style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: 'var(--active-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <UserCheck size={14} /> Add
                     </button>
                   </div>

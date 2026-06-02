@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '../components/Avatar';
-import { Heart, MessageCircle, Send, Plus, Check, MoreHorizontal } from 'lucide-react';
+import { Heart, MessageCircle, Send, Plus, Check, MoreHorizontal, Lock } from 'lucide-react';
 import PostModal from '../components/PostModal';
 import StoryCreator from '../components/StoryCreator';
+import StoryViewer from '../components/StoryViewer';
 import PostViewer from '../components/PostViewer';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -33,6 +34,8 @@ export default function Home() {
   const [showPostModal, setShowPostModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [showStoryCreator, setShowStoryCreator] = useState(false);
+  const [viewingStories, setViewingStories] = useState(null);
+  const [storyRefreshKey, setStoryRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchFeed = async () => {
@@ -176,8 +179,7 @@ export default function Home() {
             activePosts = interleaveAll(followingPosts, rankedSuggested);
           }
 
-          const activeStories = storiesData.filter(story => following.includes(story.author) || story.author === username);
-          
+                  const activeStories = storiesData.filter(story => following.includes(story.author) || story.author === username);
           setFeed(activePosts);
           setStories(activeStories);
         }
@@ -189,7 +191,7 @@ export default function Home() {
     };
 
     fetchFeed();
-  }, [user, feedFilter, showPostModal]);
+  }, [user, feedFilter, showPostModal, storyRefreshKey]);
 
   const handleLikeUpdate = useCallback((updatedPost) => {
     setFeed(prevFeed => 
@@ -414,8 +416,15 @@ export default function Home() {
         
         {/* Stories Section */}
         <div className="stories-container">
-          {/* + Your Story */}
-          <div style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => setShowStoryCreator(true)}>
+          {/* Your Story */}
+          <div style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => {
+            const myStories = stories.filter(s => s.author === user?.username);
+            if (myStories.length > 0) {
+              setViewingStories({ stories: myStories, index: 0 });
+            } else {
+              setShowStoryCreator(true);
+            }
+          }}>
             <div className="story-circle">
               <div className="story-circle-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)' }}>
                 <Plus size={20} color="var(--text-color)" strokeWidth={2.5} />
@@ -425,25 +434,24 @@ export default function Home() {
           </div>
 
           {/* Friend Stories */}
-          {!loading && stories.map((story, i) => {
-            const storyKey = `${story.author}_${story._id}`;
-            const viewed = JSON.parse(localStorage.getItem('viewedStories') || '{}')[storyKey];
+          {!loading && stories.filter(s => s.author !== user?.username).reduce((acc, story) => {
+            if (!acc.find(s => s.author === story.author)) acc.push(story);
+            return acc;
+          }, []).map((userStory) => {
+            const authorStories = stories.filter(s => s.author === userStory.author);
+            const allViewed = authorStories.every(s => s.viewers?.includes(user?.username));
+            const firstStory = authorStories[0];
             return (
-            <div key={i} style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => {
-              const viewed = JSON.parse(localStorage.getItem('viewedStories') || '{}');
-              viewed[storyKey] = true;
-              localStorage.setItem('viewedStories', JSON.stringify(viewed));
-              navigate(`/profile/${story.author}`);
-            }}>
-              <div className={`story-circle${viewed ? ' viewed' : ''}`} style={{ background: story.audience === 'close_friends' ? 'var(--text-color)' : '' }}>
-                <div className="story-circle-inner" style={{ backgroundImage: story.media ? `url(${story.media})` : 'none' }} />
-                {story.audience === 'close_friends' && (
+            <div key={userStory.author} style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => setViewingStories({ stories: authorStories, index: 0 })}>
+              <div className={`story-circle${allViewed ? ' viewed' : ''}`} style={{ background: authorStories.some(s => s.audience === 'close_friends') ? '' : '' }}>
+                <div className="story-circle-inner" style={{ backgroundImage: firstStory.media ? `url(${firstStory.media})` : 'none' }} />
+                {authorStories.some(s => s.audience === 'close_friends') && (
                   <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--text-color)', border: '2px solid var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Lock size={8} color="#fff" />
                   </div>
                 )}
               </div>
-              <span style={{ fontSize: '10px', display: 'block', textAlign: 'center', marginTop: '4px', color: 'var(--text-color)' }}>{story.author}</span>
+              <span style={{ fontSize: '10px', display: 'block', textAlign: 'center', marginTop: '4px', color: 'var(--text-color)' }}>{userStory.author}</span>
             </div>
             );
           })}
@@ -509,8 +517,16 @@ export default function Home() {
         onClose={() => setShowStoryCreator(false)}
         onPostSuccess={() => {
           setShowStoryCreator(false);
+          setStoryRefreshKey(k => k + 1);
         }}
       />
+      {viewingStories && (
+        <StoryViewer
+          stories={viewingStories.stories}
+          initialIndex={viewingStories.index}
+          onClose={() => setViewingStories(null)}
+        />
+      )}
       <PostViewer 
         post={selectedPost} 
         onClose={() => setSelectedPost(null)}

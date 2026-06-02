@@ -178,7 +178,7 @@ export default function Community() {
                   padding: '6px 14px', whiteSpace: 'nowrap', flexShrink: 0,
                   backgroundColor: activeChannel === ch.name ? 'var(--text-color)' : 'var(--bg-color)',
                   border: `1px solid ${activeChannel === ch.name ? 'var(--text-color)' : 'var(--border-color)'}`,
-                  borderRadius: '16px', color: activeChannel === ch.name ? '#fff' : 'var(--text-color)',
+                  borderRadius: '16px', color: activeChannel === ch.name ? 'var(--active-text)' : 'var(--text-color)',
                   fontSize: '12px', fontWeight: activeChannel === ch.name ? 600 : 400,
                   cursor: 'pointer', transition: 'all 0.2s'
                 }}

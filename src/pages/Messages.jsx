@@ -49,6 +49,10 @@ export default function Messages() {
   const [nicknames, setNicknames] = useState({});
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [nicknameInput, setNicknameInput] = useState('');
+  const [selectedMsg, setSelectedMsg] = useState(null);
+  const [showMsgMenu, setShowMsgMenu] = useState(false);
+  const [editingMsg, setEditingMsg] = useState(null);
+  const [editContent, setEditContent] = useState('');
   const messagesEndRef = useRef(null);
 
   const selectedUser = username || location.state?.selectedUser || null;
@@ -207,6 +211,49 @@ export default function Messages() {
     return nicknames[partnerUsername] || partnerUsername;
   };
 
+  const handleDeleteForMe = async (msgId) => {
+    const res = await fetch(`/api/messages/${msgId}/delete/${user.username}`, { method: 'POST' });
+    if (res.ok) {
+      setMessages(prev => prev.filter(m => m._id !== msgId));
+      setShowMsgMenu(false);
+    }
+  };
+
+  const handleDeleteForEveryone = async (msgId) => {
+    const res = await fetch(`/api/messages/${msgId}/delete-everyone`, { method: 'POST' });
+    if (res.ok) {
+      setMessages(prev => prev.map(m => m._id === msgId ? { ...m, isDeleted: true, content: 'This message was deleted', image: null } : m));
+      setShowMsgMenu(false);
+    }
+  };
+
+  const handleEditMessage = async (msgId) => {
+    if (!editContent.trim()) return;
+    const res = await fetch(`/api/messages/${msgId}/edit`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: editContent.trim() })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setMessages(prev => prev.map(m => m._id === msgId ? data.data : m));
+      setEditingMsg(null);
+      setEditContent('');
+      setShowMsgMenu(false);
+    }
+  };
+
+  const openMsgMenu = (msg, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedMsg(msg);
+    setShowMsgMenu(true);
+  };
+
+  const msgAge = (msg) => Date.now() - new Date(msg.timestamp).getTime();
+  const canDeleteEveryone = (msg) => msg.sender === user.username && msgAge(msg) <= 30 * 60 * 1000;
+  const canEdit = (msg) => msg.sender === user.username && msgAge(msg) <= 30 * 60 * 1000;
+
   if (!user) {
     return <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-secondary)' }}>Please log in</div>;
   }
@@ -281,9 +328,19 @@ export default function Messages() {
                     ) : (
                       <button onClick={() => { setShowConvOptions(false); setShowBlockConfirm(true); }}
                         style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Ban size={14} /> Block @{selectedUser}
-                      </button>
-                    )}
+                      <Ban size={14} /> Block @{selectedUser}
+                    </button>
+                    <div style={{ height: '1px', backgroundColor: 'var(--border-color)' }} />
+                    <button onClick={async () => {
+                      const res = await fetch(`/api/conversations/${user.username}/${selectedUser}/delete`, { method: 'POST' });
+                      if (res.ok) { setShowConvOptions(false); navigate(-1); }
+                    }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e74c3c', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <X size={14} /> Delete Chat
+                    </button>
+                  </div>
+                </>
+              )}
                   </div>
                 </>
               )}
@@ -318,8 +375,8 @@ export default function Messages() {
                   This user is not in your following list.
                 </p>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <button onClick={handleAcceptMessages}
-                    style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button onClick={handleAcceptMessages}
+                    style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: 'var(--active-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Check size={14} /> Accept Messages
                   </button>
                   <button onClick={handleIgnore}
@@ -353,7 +410,8 @@ export default function Messages() {
               messages.map((msg, i) => {
                 const isMine = msg.sender === user.username;
                 return (
-                  <div key={i} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', marginBottom: '16px' }}>
+                  <div key={msg._id || i} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', marginBottom: '16px' }}
+                    onContextMenu={(e) => { if (!msg.isDeleted) openMsgMenu(msg, e); }}>
                     <div style={{ maxWidth: '75%', display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
                       {!isMine && (
                         <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', paddingLeft: '4px' }}>
@@ -364,27 +422,72 @@ export default function Messages() {
                         padding: '12px 18px',
                         backgroundColor: isMine ? 'var(--text-color)' : 'var(--card-bg)',
                         borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                        color: isMine ? '#fff' : 'var(--text-color)',
+                        color: isMine ? 'var(--active-text)' : 'var(--text-color)',
                         border: isMine ? 'none' : '1px solid var(--border-color)',
                         boxShadow: isMine ? '0 2px 8px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.04)',
                         wordWrap: 'break-word',
                         fontSize: '15px',
-                        lineHeight: '1.45'
+                        lineHeight: '1.45',
+                        opacity: msg.isDeleted ? 0.6 : 1,
+                        fontStyle: msg.isDeleted ? 'italic' : 'normal'
                       }}>
-                        {msg.content}
-                        {msg.image && (
+                        {msg.isDeleted ? 'This message was deleted' : msg.content}
+                        {!msg.isDeleted && msg.image && (
                           <div style={{ marginTop: '8px', borderRadius: '12px', overflow: 'hidden', maxWidth: '280px', backgroundColor: 'var(--border-color)' }}>
                             <img src={msg.image} alt="" style={{ width: '100%', display: 'block' }} />
                           </div>
                         )}
                       </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', padding: '0 4px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', padding: '0 4px', display: 'flex', gap: '4px' }}>
                         {timeAgo(msg.timestamp)}
+                        {msg.editedAt && <span>· Edited</span>}
                       </div>
                     </div>
                   </div>
                 );
               })
+            )}
+            {/* Message context menu */}
+            {showMsgMenu && selectedMsg && (
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => { setShowMsgMenu(false); setSelectedMsg(null); }} />
+                <div style={{ position: 'absolute', bottom: '80px', right: '20px', zIndex: 91, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: '200px', overflow: 'hidden' }}>
+                  <button onClick={() => { handleDeleteForMe(selectedMsg._id); }}
+                    style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e74c3c', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <X size={14} /> Delete For Me
+                  </button>
+                  {canDeleteEveryone(selectedMsg) && (
+                    <button onClick={() => { handleDeleteForEveryone(selectedMsg._id); }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e74c3c', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <X size={14} /> Delete For Everyone
+                    </button>
+                  )}
+                  {canEdit(selectedMsg) && (
+                    <button onClick={() => { setEditingMsg(selectedMsg._id); setEditContent(selectedMsg.content); setShowMsgMenu(false); }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Edit3 size={14} /> Edit
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+            {/* Edit message modal */}
+            {editingMsg && (
+              <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}
+                onClick={() => { setEditingMsg(null); setEditContent(''); }}>
+                <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '24px', maxWidth: '420px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px', color: 'var(--text-color)' }}>Edit Message</h3>
+                  <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)}
+                    rows="3"
+                    style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', boxSizing: 'border-box', resize: 'none', marginBottom: '16px' }} />
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button onClick={() => { setEditingMsg(null); setEditContent(''); }}
+                      style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>Cancel</button>
+                    <button onClick={() => handleEditMessage(editingMsg)}
+                      style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: 'var(--active-text)', cursor: 'pointer' }}>Save</button>
+                  </div>
+                </div>
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -441,7 +544,7 @@ export default function Messages() {
                     });
                     if (res.ok) { setIsBlocked(true); setShowBlockConfirm(false); }
                   }}
-                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: 'var(--active-color)', color: '#fff', cursor: 'pointer' }}>Block</button>
+                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: 'var(--active-color)', color: 'var(--active-text)', cursor: 'pointer' }}>Block</button>
                 </div>
               </div>
             </div>
@@ -634,7 +737,7 @@ export default function Messages() {
                   setShowNicknameModal(false);
                 }
               }}
-                style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: '#fff', cursor: 'pointer' }}>
+                style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: 'var(--active-text)', cursor: 'pointer' }}>
                 Save
               </button>
             </div>

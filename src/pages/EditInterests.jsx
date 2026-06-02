@@ -12,6 +12,11 @@ export default function EditInterests() {
 
   const [selectedInterests, setSelectedInterests] = useState(() => user?.interests || []);
   const [savedMsg, setSavedMsg] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) setLoading(false);
+  }, [user]);
 
   const showMsg = (msg) => {
     setSavedMsg(msg);

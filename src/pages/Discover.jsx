@@ -368,7 +368,7 @@ export default function Discover() {
                     </div>
                     <button
                       onClick={(e) => handleFollow(e, u.username)}
-                      style={{ width: '100%', padding: '6px 0', backgroundColor: user?.following?.includes(u.username) ? 'var(--border-color)' : (u.hasPendingRequest ? 'var(--border-color)' : 'var(--text-color)'), border: 'none', borderRadius: '6px', color: user?.following?.includes(u.username) || u.hasPendingRequest ? 'var(--text-secondary)' : '#fff', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}
+                      style={{ width: '100%', padding: '6px 0', backgroundColor: user?.following?.includes(u.username) ? 'var(--border-color)' : (u.hasPendingRequest ? 'var(--border-color)' : 'var(--text-color)'), border: 'none', borderRadius: '6px', color: user?.following?.includes(u.username) || u.hasPendingRequest ? 'var(--text-secondary)' : 'var(--active-text)', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}
                     >
                       {user?.following?.includes(u.username) ? 'Following' : (u.hasPendingRequest ? 'Requested' : 'Follow')}
                     </button>

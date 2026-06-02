@@ -125,7 +125,7 @@ export default function Settings() {
           <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
             {['all', 'posts', 'likes', 'comments'].map(tab => (
               <button key={tab} onClick={() => setActivityTab(tab)}
-                style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: activityTab === tab ? 'var(--text-color)' : 'var(--surface-alt)', color: activityTab === tab ? 'white' : 'var(--text-secondary)', transition: 'all 0.15s' }}>
+                style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: activityTab === tab ? 'var(--text-color)' : 'var(--surface-alt)', color: activityTab === tab ? 'var(--active-text)' : 'var(--text-secondary)', transition: 'all 0.15s' }}>
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}

@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Heart, MessageCircle, Plus, Lock, MoreHorizontal, Users, ShieldAlert, MapPin, BellOff, Ban, Check } from 'lucide-react';
 import PostModal from '../components/PostModal';
 import PostViewer from '../components/PostViewer';
+import StoryViewer from '../components/StoryViewer';
 import Avatar from '../components/Avatar';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -27,6 +28,8 @@ export default function Profile() {
   const [showMuteOptions, setShowMuteOptions] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isProfileMuted, setIsProfileMuted] = useState(false);
+  const [userStories, setUserStories] = useState([]);
+  const [viewingStories, setViewingStories] = useState(null);
 
   const handleDeletePost = async () => {
     if (!deleteTargetId) return;
@@ -178,6 +181,17 @@ export default function Profile() {
         const posts = allPosts.filter(post => post.username === profileUsername && post.type === 'post');
         setUserPosts(posts);
       }
+
+      // Fetch user's active stories
+      try {
+        const storiesRes = await fetch(`/api/stories/user/${profileUsername}?currentUsername=${user?.username || ''}`);
+        if (storiesRes.ok) {
+          const storiesData = await storiesRes.json();
+          setUserStories(storiesData);
+        }
+      } catch (e) {
+        console.warn('Failed to fetch stories:', e);
+      }
     } catch (err) {
       console.error('Failed to load profile data', err);
     }
@@ -265,9 +279,18 @@ export default function Profile() {
 
           {/* Avatar + actions row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
-            <div style={{ marginTop: '-52px' }}>
-              <div style={{ borderRadius: '50%', padding: '3px', backgroundColor: 'var(--card-bg)', display: 'inline-block' }}>
-                <Avatar username={profileUser?.username} image={profileUser?.profilePhoto} size={72} style={{ border: '2px solid var(--border-color)' }} />
+            <div style={{ marginTop: '-52px', cursor: userStories.length > 0 ? 'pointer' : 'default' }}
+              onClick={() => {
+                if (userStories.length > 0) setViewingStories({ stories: userStories, index: 0 });
+              }}>
+              <div style={{
+                borderRadius: '50%', padding: '3px', display: 'inline-block',
+                backgroundColor: userStories.length > 0 ? 'var(--text-color)' : 'var(--card-bg)',
+                transition: 'transform 0.2s ease'
+              }}>
+                <div style={{ borderRadius: '50%', padding: '2px', backgroundColor: 'var(--card-bg)' }}>
+                  <Avatar username={profileUser?.username} image={profileUser?.profilePhoto} size={72} style={{ border: '2px solid var(--border-color)' }} />
+                </div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -293,7 +316,7 @@ export default function Profile() {
                     <span style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', color: 'var(--text-tertiary)' }}>Blocked</span>
                   ) : (
                     <>
-                      <button onClick={() => handleFollow(profileUsername)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: isFollowing || hasPendingRequest ? '1px solid var(--border-color)' : 'none', backgroundColor: isFollowing || hasPendingRequest ? 'transparent' : 'var(--text-color)', color: isFollowing || hasPendingRequest ? 'var(--text-secondary)' : '#fff', cursor: 'pointer', transition: 'background-color 0.15s' }}>
+                      <button onClick={() => handleFollow(profileUsername)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: isFollowing || hasPendingRequest ? '1px solid var(--border-color)' : 'none', backgroundColor: isFollowing || hasPendingRequest ? 'transparent' : 'var(--text-color)', color: isFollowing || hasPendingRequest ? 'var(--text-secondary)' : 'var(--active-text)', cursor: 'pointer', transition: 'background-color 0.15s' }}>
                         {isFollowing ? 'Following' : (hasPendingRequest ? 'Requested' : 'Follow')}
                       </button>
                       <button onClick={() => navigate(`/messages/${profileUsername}`)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>
@@ -414,6 +437,27 @@ export default function Profile() {
             </div>
           </div>
 
+          {/* Story view tracking */}
+          {isOwnProfile && userStories.length > 0 && (
+            <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)', marginTop: '12px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '8px' }}>Stories</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {userStories.map(story => {
+                  const viewerCount = story.viewers?.length || 0;
+                  return (
+                    <div key={story._id} style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '6px', backgroundSize: 'cover', backgroundPosition: 'center', backgroundImage: `url(${story.media})` }} />
+                        <span>{story.audience === 'close_friends' ? 'Close Friends' : story.audience === 'public' ? 'Public' : 'Followers'}</span>
+                      </div>
+                      <span>Seen by {viewerCount} {viewerCount === 1 ? 'person' : 'people'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Interests */}
           {canViewContent && profileUser?.interests && profileUser.interests.length > 0 && (
             <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
@@ -512,6 +556,13 @@ export default function Profile() {
 
       {isOwnProfile && (
         <PostModal isOpen={showPostModal} onClose={() => setShowPostModal(false)} onPostSuccess={() => setShowPostModal(false)} />
+      )}
+      {viewingStories && (
+        <StoryViewer
+          stories={viewingStories.stories}
+          initialIndex={viewingStories.index}
+          onClose={() => setViewingStories(null)}
+        />
       )}
       <PostViewer post={selectedPost} onClose={() => setSelectedPost(null)} onLikeUpdate={handlePostUpdate} />
 

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { X, Image, Type as TypeIcon, Smile, Send, Users, Lock } from 'lucide-react';
+import { X, Image, Type as TypeIcon, Smile, Send, Users, Lock, Globe } from 'lucide-react';
 
 const EMOJIS = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','🥰','😘','😜','🤪','😝','🤑','🤗','🤭','🤔','🤐','😐','😑','😶','😏','😒','🙄','😬','😮','😯','😲','😳','🥺','😢','😭','😤','😡','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾','💖','💗','💔','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💕','💞','💓','💝','✨','🌟','⭐','🔥','💯','🎉','🎊','🎈','🎁','🏆','💪','🤝','🙏','👋','🤚','✋','👌','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝'];
 
@@ -9,6 +9,7 @@ const STICKERS = ['🔥','✨','❤️','💯','⭐','🎉','💪','🚀','🌈'
 export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
   const { user } = useAuth();
   const [media, setMedia] = useState(null);
+  const [mediaType, setMediaType] = useState('image');
   const [preview, setPreview] = useState('');
   const [caption, setCaption] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,16 +23,31 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
 
-  const handleImageChange = (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreview(e.target.result);
-        setMedia(e.target.result);
+    if (!file) return;
+    const isVideo = file.type.startsWith('video/');
+    if (isVideo) {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        URL.revokeObjectURL(video.src);
+        if (video.duration > 30) {
+          setError('Video must be 30 seconds or less');
+          e.target.value = '';
+          return;
+        }
+        setError('');
       };
-      reader.readAsDataURL(file);
+      video.src = URL.createObjectURL(file);
     }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPreview(e.target.result);
+      setMedia(e.target.result);
+      setMediaType(isVideo ? 'video' : 'image');
+    };
+    reader.readAsDataURL(file);
   };
 
   const addOverlay = (emoji) => {
@@ -87,7 +103,7 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
       const res = await fetch('/api/stories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author: user.username, media, caption, audience })
+        body: JSON.stringify({ author: user.username, media, mediaType, caption, audience })
       });
       if (res.ok) {
         setMedia(null);
@@ -160,13 +176,17 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
                   color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
                   transition: 'all 0.2s'
                 }}>
-                {audience === 'close_friends' ? <Lock size={12} /> : <Users size={12} />}
-                {audience === 'close_friends' ? 'Close Friends' : 'Followers'}
+                {audience === 'close_friends' ? <Lock size={12} /> : audience === 'public' ? <Globe size={12} /> : <Users size={12} />}
+                {audience === 'close_friends' ? 'Close Friends' : audience === 'public' ? 'Public' : 'Followers'}
               </button>
               {showAudiencePicker && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setShowAudiencePicker(false)} />
                   <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, marginTop: '4px', backgroundColor: 'var(--card-bg)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', overflow: 'hidden', minWidth: '160px' }}>
+                    <button onClick={() => { setAudience('public'); setShowAudiencePicker(false); }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'public' ? 'var(--text-color)' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Globe size={14} /> Public
+                    </button>
                     <button onClick={() => { setAudience('followers'); setShowAudiencePicker(false); }}
                       style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'followers' ? 'var(--text-color)' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Users size={14} /> Followers
@@ -218,7 +238,7 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
             </div>
             <div style={{ fontWeight: 600, marginBottom: '4px' }}>Choose a photo</div>
             <div style={{ fontSize: '13px' }}>PNG, JPG, GIF</div>
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+            <input ref={fileInputRef} type="file" accept="image/*,video/*" onChange={handleFileChange} style={{ display: 'none' }} />
           </div>
         ) : (
           <div style={{ position: 'relative', width: '100%', maxWidth: '400px', margin: '0 auto' }} ref={canvasRef}>

@@ -186,7 +186,7 @@ export default function EditProfile() {
           {photoPreview ? (
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
               <button onClick={handleUploadPhoto} disabled={photoUploading}
-                style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: '#fff', cursor: photoUploading ? 'not-allowed' : 'pointer', opacity: photoUploading ? 0.6 : 1 }}>
+                style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: "var(--text-color)", color: 'var(--active-text)', cursor: photoUploading ? 'not-allowed' : 'pointer', opacity: photoUploading ? 0.6 : 1 }}>
                 {photoUploading ? 'Uploading...' : 'Save Photo'}
               </button>
               <button onClick={() => setPhotoPreview(null)}

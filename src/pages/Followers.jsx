@@ -100,7 +100,7 @@ export default function Followers() {
                     backgroundColor: user?.following?.includes(member.username) ? 'var(--border-color)' : 'var(--text-color)',
                     border: 'none',
                     borderRadius: '6px',
-                    color: user?.following?.includes(member.username) ? 'var(--text-secondary)' : 'white',
+                    color: user?.following?.includes(member.username) ? 'var(--text-secondary)' : 'var(--active-text)',
                     fontWeight: 600,
                     fontSize: '12px',
                     cursor: 'pointer',

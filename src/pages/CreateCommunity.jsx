@@ -89,7 +89,7 @@ export default function CreateCommunity() {
             flex: 1, padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
             backgroundColor: !isPrivate ? 'var(--text-color)' : 'var(--bg-color)',
             border: `1px solid ${!isPrivate ? 'var(--text-color)' : 'var(--border-color)'}`,
-            borderRadius: '8px', color: !isPrivate ? '#fff' : 'var(--text-color)',
+            borderRadius: '8px', color: !isPrivate ? 'var(--active-text)' : 'var(--text-color)',
             fontSize: '14px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
           }}>
             <Globe size={18} /> Public
@@ -98,7 +98,7 @@ export default function CreateCommunity() {
             flex: 1, padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
             backgroundColor: isPrivate ? 'var(--text-color)' : 'var(--bg-color)',
             border: `1px solid ${isPrivate ? 'var(--text-color)' : 'var(--border-color)'}`,
-            borderRadius: '8px', color: isPrivate ? '#fff' : 'var(--text-color)',
+            borderRadius: '8px', color: isPrivate ? 'var(--active-text)' : 'var(--text-color)',
             fontSize: '14px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
           }}>
             <Lock size={18} /> Private
