@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, LogOut, Shield, Sliders, Palette, Heart, Bookmark, Layers, Activity, User, Bell, Sparkles, Clock, MessageCircle, UserPlus, Eye, List, Ban } from 'lucide-react';
+import { ArrowLeft, ChevronRight, LogOut, Shield, Sliders, Palette, Heart, Bookmark, Layers, Activity, User, Bell, Sparkles, Clock, MessageCircle, UserPlus, Eye, List, Ban, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const menuItems = [
+  { id: 'close-friends', label: 'Close Friends', desc: 'Stories visible only to your closest connections', icon: Users, path: '/settings/close-friends' },
   { id: 'privacy', label: 'Profile Privacy', desc: 'Manage visibility and follow access', icon: Shield, path: '/settings/privacy' },
   { id: 'interests', label: 'Edit Interests', desc: 'Topics you care about', icon: Layers, path: '/settings/interests' },
   { id: 'feed', label: 'Feed Control', desc: 'Content preferences and sorting', icon: Sliders, path: '/settings/feed' },

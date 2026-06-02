@@ -167,7 +167,9 @@ const UserSchema = new mongoose.Schema({
     duration: { type: String, enum: ['8h', '24h', '7d', 'forever'] },
     mutedAt: { type: Date, default: Date.now },
     expiresAt: { type: Date, default: null }
-  }]
+  }],
+  closeFriends: [{ type: String }],
+  nicknames: [{ partner: String, nickname: String }]
 });
 
 const PollOptionSchema = new mongoose.Schema({
@@ -303,6 +305,7 @@ const StorySchema = new mongoose.Schema({
   author: { type: String, required: true },
   media: { type: String, required: true },
   caption: { type: String, default: '' },
+  audience: { type: String, enum: ['followers', 'close_friends'], default: 'followers' },
   viewers: [{ type: String }],
   reactions: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
@@ -1286,6 +1289,112 @@ app.get('/api/users/:username/dm-muted', async (req, res) => {
     const user = await User.findOne({ username: req.params.username }).select('dmMutedUsers').lean();
     res.json(user?.dmMutedUsers || []);
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// CLOSE FRIENDS ROUTES
+app.post('/api/users/:username/close-friends/add', async (req, res) => {
+  try {
+    const { targetUsername } = req.body;
+    if (!targetUsername) return res.status(400).json({ error: 'targetUsername required' });
+    if (targetUsername === req.params.username) return res.status(400).json({ error: 'Cannot add yourself' });
+    // Verify target is a follower, following, or mutual
+    const user = await User.findOne({ username: req.params.username }).select('followers following').lean();
+    const isFollower = (user?.followers || []).includes(targetUsername);
+    const isFollowing = (user?.following || []).includes(targetUsername);
+    if (!isFollower && !isFollowing) {
+      return res.status(400).json({ error: 'Can only add connected users (followers/following)' });
+    }
+    await User.updateOne(
+      { username: req.params.username },
+      { $addToSet: { closeFriends: targetUsername } }
+    );
+    const updated = await User.findOne({ username: req.params.username }).select('closeFriends').lean();
+    // Return enriched close friend info
+    const closeFriends = updated?.closeFriends || [];
+    const users = await User.find({ username: { $in: closeFriends } }).select('username name profilePhoto').lean();
+    res.json(users);
+  } catch (err) {
+    console.error('Close friends add error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/users/:username/close-friends/remove', async (req, res) => {
+  try {
+    const { targetUsername } = req.body;
+    if (!targetUsername) return res.status(400).json({ error: 'targetUsername required' });
+    await User.updateOne(
+      { username: req.params.username },
+      { $pull: { closeFriends: targetUsername } }
+    );
+    const updated = await User.findOne({ username: req.params.username }).select('closeFriends').lean();
+    const closeFriends = updated?.closeFriends || [];
+    const users = await User.find({ username: { $in: closeFriends } }).select('username name profilePhoto').lean();
+    res.json(users);
+  } catch (err) {
+    console.error('Close friends remove error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/users/:username/close-friends', async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username }).select('closeFriends').lean();
+    const closeFriends = user?.closeFriends || [];
+    const users = await User.find({ username: { $in: closeFriends } }).select('username name profilePhoto').lean();
+    res.json(users);
+  } catch (err) {
+    console.error('Close friends list error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// NICKNAMES ROUTES
+app.post('/api/users/:username/nicknames', async (req, res) => {
+  try {
+    const { partner, nickname } = req.body;
+    if (!partner) return res.status(400).json({ error: 'partner required' });
+    // Remove existing nickname for this partner, then add new one
+    await User.updateOne(
+      { username: req.params.username },
+      { $pull: { nicknames: { partner } } }
+    );
+    if (nickname && nickname.trim()) {
+      await User.updateOne(
+        { username: req.params.username },
+        { $push: { nicknames: { partner, nickname: nickname.trim() } } }
+      );
+    }
+    const updated = await User.findOne({ username: req.params.username }).select('nicknames').lean();
+    res.json(updated?.nicknames || []);
+  } catch (err) {
+    console.error('Nickname set error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/users/:username/nicknames/:partner', async (req, res) => {
+  try {
+    await User.updateOne(
+      { username: req.params.username },
+      { $pull: { nicknames: { partner: req.params.partner } } }
+    );
+    const updated = await User.findOne({ username: req.params.username }).select('nicknames').lean();
+    res.json(updated?.nicknames || []);
+  } catch (err) {
+    console.error('Nickname remove error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/users/:username/nicknames', async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username }).select('nicknames').lean();
+    res.json(user?.nicknames || []);
+  } catch (err) {
+    console.error('Nicknames list error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -2669,9 +2778,9 @@ app.get('/api/channel-messages/:communityId/:channelName', async (req, res) => {
 // STORIES — independent from posts
 app.post('/api/stories', async (req, res) => {
   try {
-    const { author, media, caption } = req.body;
+    const { author, media, caption, audience } = req.body;
     if (!author || !media) return res.status(400).json({ error: 'Author and media required' });
-    const story = new Story({ author, media, caption: caption || '' });
+    const story = new Story({ author, media, caption: caption || '', audience: audience || 'followers' });
     await story.save();
     res.json(story);
   } catch (err) {
@@ -2686,19 +2795,23 @@ app.get('/api/stories', async (req, res) => {
     let stories = await Story.find({ expiresAt: { $gt: now } })
       .sort({ createdAt: -1 })
       .lean();
-    // PRIVACY FILTER: remove stories from private accounts that currentUser cannot view
+    // PRIVACY FILTER + AUDIENCE FILTER: remove stories from private accounts, filter by audience
     if (currentUsername) {
-      const allUsers = await User.find().select('username isPrivate followers').lean();
-      const privacyMap = {};
+      const allUsers = await User.find().select('username isPrivate followers closeFriends').lean();
+      const userMap = {};
       for (const u of allUsers) {
-        privacyMap[u.username] = { isPrivate: u.isPrivate, followers: u.followers || [] };
+        userMap[u.username] = { isPrivate: u.isPrivate, followers: u.followers || [], closeFriends: u.closeFriends || [] };
       }
       stories = stories.filter(s => {
-        const owner = privacyMap[s.author];
+        const owner = userMap[s.author];
         if (!owner) return true;
-        if (!owner.isPrivate) return true;
+        // Own stories always visible
         if (s.author === currentUsername) return true;
-        return owner.followers.includes(currentUsername);
+        // Account privacy: private accounts → only followers
+        if (owner.isPrivate && !owner.followers.includes(currentUsername)) return false;
+        // Audience: close_friends → only users in author's closeFriends list
+        if (s.audience === 'close_friends' && !owner.closeFriends.includes(currentUsername)) return false;
+        return true;
       });
     }
     // BLOCK FILTER

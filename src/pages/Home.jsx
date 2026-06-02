@@ -425,8 +425,13 @@ export default function Home() {
                   localStorage.setItem('viewedStories', JSON.stringify(viewed));
                   navigate(`/profile/${story.author}`);
                 }}>
-                  <div className="story-circle" style={{ background: viewed ? 'var(--border-color)' : 'var(--primary-color)' }}>
+                  <div className="story-circle" style={{ background: viewed ? 'var(--border-color)' : (story.audience === 'close_friends' ? '#22c55e' : 'var(--primary-color)') }}>
                     <div className="story-circle-inner" style={{ backgroundImage: story.media ? `url(${story.media})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                    {story.audience === 'close_friends' && (
+                      <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Lock size={8} color="#fff" />
+                      </div>
+                    )}
                   </div>
                   <span style={{ fontSize: '10px', display: 'block', textAlign: 'center', marginTop: '4px' }}>{story.author}</span>
                 </div>

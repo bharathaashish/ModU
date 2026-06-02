@@ -27,6 +27,7 @@ import Liked from './pages/Liked'
 import Privacy from './pages/Privacy'
 import Messages from './pages/Messages'
 import Saved from './pages/Saved'
+import CloseFriends from './pages/CloseFriends'
 import Followers from './pages/Followers'
 import Following from './pages/Following'
 import BlockedUsers from './pages/BlockedUsers'
@@ -82,6 +83,7 @@ function AppROUTES() {
         <Route path="/settings/appearance" element={<Appearance />} />
         <Route path="/settings/liked" element={<Liked />} />
         <Route path="/settings/saved" element={<Saved />} />
+        <Route path="/settings/close-friends" element={<CloseFriends />} />
         <Route path="/settings/blocked" element={<BlockedUsers />} />
         <Route path="/post/:id" element={<PostPage />} />
       </Route>
@@ -97,9 +99,17 @@ function App() {
     // Task 1: Local Storage Purge (Remove old mock data)
     ['modu_users', 'modu_posts', 'modu_stories'].forEach(k => localStorage.removeItem(k));
     
-    // Task 3: Theme persistence
-    const savedTheme = localStorage.getItem('modu_theme') || 'dark';
+    // Task 3: Theme persistence (migrate old light/dark to space-light/space-dark)
+    let savedTheme = localStorage.getItem('modu_theme') || 'space-dark';
+    if (savedTheme === 'light') savedTheme = 'space-light';
+    else if (savedTheme === 'dark') savedTheme = 'space-dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // Task 4: Font size persistence
+    const savedFont = localStorage.getItem('modu_font_size') || 'normal';
+    if (savedFont !== 'normal') {
+      document.documentElement.setAttribute('data-font-size', savedFont);
+    }
   }, []);
 
   return (

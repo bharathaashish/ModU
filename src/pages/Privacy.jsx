@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Eye, Camera, Sparkles, Lock, Globe } from 'lucide-react';
+import { ArrowLeft, Eye, Camera, Sparkles, Lock, Globe, ChevronRight, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const VISIBILITY_OPTIONS = [
@@ -88,6 +88,19 @@ export default function Privacy() {
 
         <div style={{ padding: '14px 16px', backgroundColor: 'var(--hover-bg)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
           Manage your account privacy. When your account is private, only approved followers can see your posts and stories. Profile photo and interest tags have their own independent visibility controls.
+        </div>
+
+        {/* Close Friends link */}
+        <div onClick={() => navigate('/settings/close-friends')}
+          style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 18px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.15s' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(34,197,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Heart size={18} color="#22c55e" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-color)' }}>Close Friends</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '1px' }}>Manage your private close friends list</div>
+          </div>
+          <ChevronRight size={18} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
         </div>
 
         {/* Account Privacy */}

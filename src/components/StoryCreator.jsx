@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { X, Image, Type as TypeIcon, Smile, Send } from 'lucide-react';
+import { X, Image, Type as TypeIcon, Smile, Send, Users, Lock } from 'lucide-react';
 
 const EMOJIS = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','🥰','😘','😜','🤪','😝','🤑','🤗','🤭','🤔','🤐','😐','😑','😶','😏','😒','🙄','😬','😮','😯','😲','😳','🥺','😢','😭','😤','😡','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾','💖','💗','💔','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💕','💞','💓','💝','✨','🌟','⭐','🔥','💯','🎉','🎊','🎈','🎁','🏆','💪','🤝','🙏','👋','🤚','✋','👌','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝'];
 
@@ -16,6 +16,8 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
   const [showEmoji, setShowEmoji] = useState(false);
   const [showStickers, setShowStickers] = useState(false);
   const [overlays, setOverlays] = useState([]);
+  const [audience, setAudience] = useState('followers');
+  const [showAudiencePicker, setShowAudiencePicker] = useState(false);
   const [overlayType, setOverlayType] = useState(null);
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
@@ -85,13 +87,14 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
       const res = await fetch('/api/stories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author: user.username, media, caption })
+        body: JSON.stringify({ author: user.username, media, caption, audience })
       });
       if (res.ok) {
         setMedia(null);
         setPreview('');
         setCaption('');
         setOverlays([]);
+        setAudience('followers');
         if (fileInputRef.current) fileInputRef.current.value = '';
         onPostSuccess?.();
         onClose();
@@ -147,22 +150,53 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
           <X size={24} />
         </button>
         <span style={{ color: '#fff', fontWeight: 600, fontSize: '16px' }}>New Story</span>
-        <button
-          onClick={handleSend}
-          disabled={!media || loading}
-          style={{
-            padding: '8px 20px',
-            backgroundColor: loading || !media ? 'rgba(255,255,255,0.2)' : '#4f6ef7',
-            border: 'none', borderRadius: '8px', color: '#fff',
-            fontWeight: 600, fontSize: '14px',
-            cursor: loading || !media ? 'not-allowed' : 'pointer',
-            display: 'flex', alignItems: 'center', gap: '6px',
-            transition: 'all 0.2s'
-          }}
-        >
-          <Send size={16} />
-          {loading ? 'Posting...' : 'Share'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {preview && (
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setShowAudiencePicker(!showAudiencePicker)}
+                style={{
+                  padding: '6px 12px', fontSize: '12px', fontWeight: 600, borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.1)',
+                  color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                  transition: 'all 0.2s'
+                }}>
+                {audience === 'close_friends' ? <Lock size={12} /> : <Users size={12} />}
+                {audience === 'close_friends' ? 'Close Friends' : 'Followers'}
+              </button>
+              {showAudiencePicker && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setShowAudiencePicker(false)} />
+                  <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, marginTop: '4px', backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', overflow: 'hidden', minWidth: '160px' }}>
+                    <button onClick={() => { setAudience('followers'); setShowAudiencePicker(false); }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'followers' ? '#4f6ef7' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Users size={14} /> Followers
+                    </button>
+                    <button onClick={() => { setAudience('close_friends'); setShowAudiencePicker(false); }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'close_friends' ? '#4f6ef7' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Lock size={14} /> Close Friends
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <button
+            onClick={handleSend}
+            disabled={!media || loading}
+            style={{
+              padding: '8px 20px',
+              backgroundColor: loading || !media ? 'rgba(255,255,255,0.2)' : '#4f6ef7',
+              border: 'none', borderRadius: '8px', color: '#fff',
+              fontWeight: 600, fontSize: '14px',
+              cursor: loading || !media ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <Send size={16} />
+            {loading ? 'Posting...' : 'Share'}
+          </button>
+        </div>
       </div>
 
       {/* Editor Area */}

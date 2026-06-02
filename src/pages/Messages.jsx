@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Avatar from '../components/Avatar';
-import { ArrowLeft, Send, MessageCircle, Image, X, MoreVertical, BellOff, Ban, User, Check, Users, Globe, Lock, LogOut, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Send, MessageCircle, Image, X, MoreVertical, BellOff, Ban, User, Check, Users, Globe, Lock, LogOut, ChevronRight, Edit3 } from 'lucide-react';
 
 const timeAgo = (date) => {
   const diff = Date.now() - new Date(date).getTime();
@@ -46,6 +46,9 @@ export default function Messages() {
   const [joinedLoading, setJoinedLoading] = useState(false);
   const [leavingId, setLeavingId] = useState(null);
   const [activeTab, setActiveTab] = useState('inbox');
+  const [nicknames, setNicknames] = useState({});
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [nicknameInput, setNicknameInput] = useState('');
   const messagesEndRef = useRef(null);
 
   const selectedUser = username || location.state?.selectedUser || null;
@@ -60,6 +63,19 @@ export default function Messages() {
         .finally(() => setConversationsLoading(false));
     }
   }, [selectedUser, user]);
+
+  useEffect(() => {
+    if (user) {
+      fetch(`/api/users/${user.username}/nicknames`)
+        .then(res => res.json())
+        .then(data => {
+          const map = {};
+          (data || []).forEach(n => { map[n.partner] = n.nickname; });
+          setNicknames(map);
+        })
+        .catch(() => {});
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!selectedUser && user && activeTab === 'communities') {
@@ -187,6 +203,10 @@ export default function Messages() {
     setLeavingId(null);
   };
 
+  const getDisplayName = (partnerUsername) => {
+    return nicknames[partnerUsername] || partnerUsername;
+  };
+
   if (!user) {
     return <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-secondary)' }}>Please log in</div>;
   }
@@ -203,7 +223,8 @@ export default function Messages() {
             <Avatar username={selectedUser} image={targetUser?.profilePhoto} size={42} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {targetLoading ? 'Loading...' : targetUser?.name || targetUser?.username || selectedUser}
+                {targetLoading ? 'Loading...' : getDisplayName(selectedUser)}
+                {nicknames[selectedUser] && <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 400 }}>(@{selectedUser})</span>}
                 {isDmMuted && <BellOff size={12} color="var(--text-tertiary)" />}
               </div>
               {targetUser?.name && targetUser?.username !== targetUser?.name && (
@@ -222,6 +243,10 @@ export default function Messages() {
                     <button onClick={() => { setShowConvOptions(false); navigate(`/profile/${selectedUser}`); }}
                       style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <User size={14} /> View Profile
+                    </button>
+                    <button onClick={() => { setShowConvOptions(false); setNicknameInput(nicknames[selectedUser] || ''); setShowNicknameModal(true); }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Edit3 size={14} /> {nicknames[selectedUser] ? 'Change Nickname' : 'Set Nickname'}
                     </button>
                     <div style={{ height: '1px', backgroundColor: 'var(--border-color)' }} />
                     {isDmMuted ? (
@@ -465,6 +490,7 @@ export default function Messages() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {conversations.map((conv) => {
                   const partnerName = conv.partnerInfo?.username || conv.partner;
+                  const displayName = nicknames[partnerName] || partnerName;
                   const time = timeAgo(conv.lastTimestamp);
                   const isOnline = conv.lastTimestamp && (Date.now() - new Date(conv.lastTimestamp).getTime() < 300000);
                   return (
@@ -481,7 +507,8 @@ export default function Messages() {
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500, marginBottom: '1px' }}>{conv.partnerInfo.name}</div>
                         )}
                         <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)', marginBottom: '3px' }}>
-                          {partnerName}
+                          {displayName}
+                          {nicknames[partnerName] && <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: '4px' }}>@{partnerName}</span>}
                           {conv.needsAcceptance && <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: '6px' }}>· Pending</span>}
                         </div>
                         <div style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -553,6 +580,65 @@ export default function Messages() {
               </div>
             )
           )}
+        </div>
+      )}
+
+      {/* Nickname Modal */}
+      {showNicknameModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '24px', maxWidth: '360px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px', color: 'var(--text-color)' }}>
+              {nicknames[selectedUser] ? 'Change Nickname' : 'Set Nickname'}
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+              Assign a personal nickname for <strong>@{selectedUser}</strong>. Only you can see this.
+            </p>
+            <input
+              type="text"
+              value={nicknameInput}
+              onChange={(e) => setNicknameInput(e.target.value)}
+              placeholder="Enter nickname..."
+              style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', boxSizing: 'border-box', marginBottom: '16px' }}
+            />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              {nicknames[selectedUser] && (
+                <button onClick={async () => {
+                  const res = await fetch(`/api/users/${user.username}/nicknames/${selectedUser}`, { method: 'DELETE' });
+                  if (res.ok) {
+                    const data = await res.json();
+                    const map = {};
+                    (data || []).forEach(n => { map[n.partner] = n.nickname; });
+                    setNicknames(map);
+                    setShowNicknameModal(false);
+                  }
+                }}
+                  style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: '#ef4444', cursor: 'pointer' }}>
+                  Remove
+                </button>
+              )}
+              <button onClick={() => setShowNicknameModal(false)}
+                style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={async () => {
+                const res = await fetch(`/api/users/${user.username}/nicknames`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ partner: selectedUser, nickname: nicknameInput })
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  const map = {};
+                  (data || []).forEach(n => { map[n.partner] = n.nickname; });
+                  setNicknames(map);
+                  setShowNicknameModal(false);
+                }
+              }}
+                style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', border: 'none', background: 'var(--primary-color)', color: '#fff', cursor: 'pointer' }}>
+                Save
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

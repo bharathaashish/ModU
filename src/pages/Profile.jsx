@@ -279,6 +279,10 @@ export default function Profile() {
                   <button onClick={() => navigate('/edit-profile')} className="ghost-button">
                     Edit Profile
                   </button>
+                  <button onClick={() => navigate('/settings/close-friends')}
+                    style={{ padding: '7px 14px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Heart size={14} color="#22c55e" /> Close Friends
+                  </button>
                   <button onClick={() => setShowPostModal(true)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--primary-color)', border: 'none', borderRadius: 'var(--radius-sm)', color: '#fff', cursor: 'pointer', transition: 'background-color 0.15s' }}>
                     <Plus size={18} />
                   </button>
