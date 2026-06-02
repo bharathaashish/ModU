@@ -76,22 +76,26 @@ export default function Layout() {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
       {renderTopBar()}
       
-      <div className="layout-content" style={{ flex: 1, paddingBottom: '70px' }}>
+      <div className="layout-content" style={{ flex: 1 }}>
         <Outlet />
       </div>
 
       <nav className="bottom-nav">
         <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <Home size={24} />
+          <Home size={22} className="nav-item-icon" />
+          <span className="nav-item-label">Home</span>
         </NavLink>
         <NavLink to="/discover" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <Compass size={24} />
+          <Compass size={22} className="nav-item-icon" />
+          <span className="nav-item-label">Discover</span>
         </NavLink>
         <NavLink to="/messages" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <MessageCircle size={24} />
+          <MessageCircle size={22} className="nav-item-icon" />
+          <span className="nav-item-label">Messages</span>
         </NavLink>
         <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <User size={24} />
+          <User size={22} className="nav-item-icon" />
+          <span className="nav-item-label">Profile</span>
         </NavLink>
       </nav>
     </div>

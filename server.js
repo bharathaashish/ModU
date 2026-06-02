@@ -134,6 +134,10 @@ const UserSchema = new mongoose.Schema({
   interests: [{ type: String }],
   bio: { type: String, default: '' },
   profilePhoto: { type: String, default: '' },
+  photoCrop: {
+    type: { x: Number, y: Number, width: Number, height: Number, zoom: Number },
+    default: null
+  },
   photoVisibility: { type: String, enum: ['everyone', 'followers'], default: 'everyone' },
   interestVisibility: { type: String, enum: ['everyone', 'followers'], default: 'everyone' },
   isPrivate: { type: Boolean, default: false },
@@ -822,10 +826,18 @@ app.get('/api/users/:username', async (req, res) => {
 // PROFILE PHOTO UPLOAD
 app.post('/api/users/:username/photo', async (req, res) => {
   try {
-    const { image } = req.body;
+    const { image, cropX, cropY, zoom, cropAreaPixels } = req.body;
+    const update = { profilePhoto: image || '' };
+    if (cropAreaPixels) {
+      update.photoCrop = {
+        x: cropAreaPixels.x, y: cropAreaPixels.y,
+        width: cropAreaPixels.width, height: cropAreaPixels.height,
+        zoom
+      };
+    }
     const user = await User.findOneAndUpdate(
       { username: req.params.username },
-      { $set: { profilePhoto: image || '' } },
+      { $set: update },
       { new: true }
     ).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });

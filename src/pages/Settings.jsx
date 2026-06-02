@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, LogOut, Shield, Sliders, Palette, Heart, Bookmark, Layers, Activity, User, Bell, Sparkles, Clock, MessageCircle, UserPlus, Eye, List, Ban, Users } from 'lucide-react';
+import { ArrowLeft, ChevronRight, LogOut, Shield, Sliders, Palette, Heart, Bookmark, Layers, Activity, MessageCircle, UserPlus, Eye, List, Ban, Users, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const menuItems = [
@@ -64,21 +64,20 @@ export default function Settings() {
         </div>
       </div>
 
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {/* Activity Dashboard */}
-        <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '20px', boxShadow: 'var(--card-shadow)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+        {/* Activity Overview */}
+        <div style={{ padding: '20px 16px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
             <Activity size={16} />
-            <span>ACTIVITY OVERVIEW</span>
+            <span>ACTIVITY</span>
           </div>
           {loading ? (
-            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>Loading activity...</div>
+            <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>Loading activity...</div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
               {myActivity.map(item => (
-                <div key={item.type} style={{ padding: '14px 10px', backgroundColor: 'var(--bg-color)', borderRadius: 'var(--radius-md)', textAlign: 'center', border: '1px solid var(--border-color)' }}>
-                  <item.icon size={18} style={{ color: 'var(--primary-color)', marginBottom: '6px' }} />
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-color)' }}>{item.count}</div>
+                <div key={item.type} style={{ padding: '12px 8px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-color)' }}>{item.count}</div>
                   <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>{item.label}</div>
                 </div>
               ))}
@@ -86,28 +85,40 @@ export default function Settings() {
           )}
         </div>
 
-        {/* Settings Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {menuItems.map(item => (
-            <div key={item.id} onClick={() => navigate(item.path)}
-              style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 18px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', boxShadow: 'var(--card-shadow)', transition: 'all 0.2s ease' }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = 'var(--card-shadow-hover)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = 'var(--card-shadow)'; }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <item.icon size={18} color="var(--primary-color)" />
-              </div>
+        <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '0 16px' }} />
+
+        {/* Settings List */}
+        <div style={{ padding: '8px 0' }}>
+          {menuItems.map((item, index) => (
+            <div key={item.id}
+              onClick={() => navigate(item.path)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '14px 16px',
+                cursor: 'pointer',
+                transition: 'background-color 0.15s',
+                borderBottom: index < menuItems.length - 1 ? '1px solid var(--border-color)' : 'none',
+                margin: '0 16px'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hover-bg)'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+              <item.icon size={20} color="var(--primary-color)" style={{ flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-color)' }}>{item.label}</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{item.desc}</div>
+                <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)' }}>{item.label}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '1px' }}>{item.desc}</div>
               </div>
               <ChevronRight size={18} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
             </div>
           ))}
         </div>
 
+        <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '0 16px' }} />
+
         {/* Recent Activity */}
-        <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '20px', boxShadow: 'var(--card-shadow)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+        <div style={{ padding: '20px 16px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
             <Clock size={16} />
             <span>RECENT ACTIVITY</span>
           </div>
@@ -157,11 +168,13 @@ export default function Settings() {
         </div>
 
         {/* Log Out */}
-        <button onClick={handleLogout}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '14px', backgroundColor: 'transparent', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', color: '#ef4444', fontWeight: 600, fontSize: '15px', cursor: 'pointer', transition: 'all 0.2s' }}>
-          <LogOut size={18} />
-          Log Out
-        </button>
+        <div style={{ padding: '16px' }}>
+          <button onClick={handleLogout}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '14px', backgroundColor: 'transparent', border: 'none', color: '#ef4444', fontWeight: 600, fontSize: '15px', cursor: 'pointer' }}>
+            <LogOut size={18} />
+            Log Out
+          </button>
+        </div>
       </div>
     </div>
   );

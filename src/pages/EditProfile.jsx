@@ -28,6 +28,7 @@ export default function EditProfile() {
   const [photoUploading, setPhotoUploading] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropImage, setCropImage] = useState(null);
+  const [cropMeta, setCropMeta] = useState(null);
 
   const validateUsername = useCallback((val) => {
     if (val.length > 0 && !USERNAME_REGEX.test(val)) {
@@ -72,10 +73,17 @@ export default function EditProfile() {
     setPhotoUploading(true);
     setError('');
     try {
+      const body = { image: photoPreview };
+      if (cropMeta) {
+        body.cropX = cropMeta.cropX;
+        body.cropY = cropMeta.cropY;
+        body.zoom = cropMeta.zoom;
+        body.cropAreaPixels = cropMeta.cropAreaPixels;
+      }
       const res = await fetch(`/api/users/${user.username}/photo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: photoPreview })
+        body: JSON.stringify(body)
       });
       if (res.ok) {
         const updatedUser = await res.json();
@@ -110,8 +118,9 @@ export default function EditProfile() {
     setPhotoUploading(false);
   };
 
-  const handleCropSave = (croppedImage) => {
-    setPhotoPreview(croppedImage);
+  const handleCropSave = (cropData) => {
+    setPhotoPreview(cropData.dataUrl);
+    setCropMeta({ cropX: cropData.cropX, cropY: cropData.cropY, zoom: cropData.zoom, cropAreaPixels: cropData.cropAreaPixels });
     setShowCropModal(false);
     setCropImage(null);
   };

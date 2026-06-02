@@ -99,11 +99,11 @@ function App() {
     // Task 1: Local Storage Purge (Remove old mock data)
     ['modu_users', 'modu_posts', 'modu_stories'].forEach(k => localStorage.removeItem(k));
     
-    // Task 3: Theme persistence (migrate old light/dark to space-light/space-dark)
-    let savedTheme = localStorage.getItem('modu_theme') || 'space-dark';
-    if (savedTheme === 'light') savedTheme = 'space-light';
-    else if (savedTheme === 'dark') savedTheme = 'space-dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    // Task 3: Theme persistence
+    const savedTheme = localStorage.getItem('modu_theme') || 'dark';
+    const normalizedTheme = savedTheme === 'light' ? 'light' : 'dark';
+    localStorage.setItem('modu_theme', normalizedTheme);
+    document.documentElement.setAttribute('data-theme', normalizedTheme);
 
     // Task 4: Font size persistence
     const savedFont = localStorage.getItem('modu_font_size') || 'normal';

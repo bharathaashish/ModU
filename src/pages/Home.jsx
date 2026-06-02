@@ -413,38 +413,40 @@ export default function Home() {
       <main className="main-content" style={{ padding: '16px 0', maxWidth: '600px', margin: '0 auto' }}>
         
         {/* Stories Section */}
-        <div className="stories-container" style={{ borderBottom: stories.length > 0 ? '1px solid var(--border-color)' : 'none', paddingBottom: '16px', margin: '0 16px', padding: '0 0 16px 0' }}>
-            {loading ? null : stories.length > 0 ? (
-              stories.map((story, i) => {
-                const storyKey = `${story.author}_${story._id}`;
-                const viewed = JSON.parse(localStorage.getItem('viewedStories') || '{}')[storyKey];
-                return (
-                <div key={i} style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => {
-                  const viewed = JSON.parse(localStorage.getItem('viewedStories') || '{}');
-                  viewed[storyKey] = true;
-                  localStorage.setItem('viewedStories', JSON.stringify(viewed));
-                  navigate(`/profile/${story.author}`);
-                }}>
-                  <div className="story-circle" style={{ background: viewed ? 'var(--border-color)' : (story.audience === 'close_friends' ? '#22c55e' : 'var(--primary-color)') }}>
-                    <div className="story-circle-inner" style={{ backgroundImage: story.media ? `url(${story.media})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                    {story.audience === 'close_friends' && (
-                      <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Lock size={8} color="#fff" />
-                      </div>
-                    )}
+        <div className="stories-container">
+          {/* + Your Story */}
+          <div style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => setShowStoryCreator(true)}>
+            <div className="story-circle">
+              <div className="story-circle-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)' }}>
+                <Plus size={20} color="var(--primary-color)" strokeWidth={2.5} />
+              </div>
+            </div>
+            <span style={{ fontSize: '10px', display: 'block', textAlign: 'center', marginTop: '4px', color: 'var(--text-secondary)' }}>Your Story</span>
+          </div>
+
+          {/* Friend Stories */}
+          {!loading && stories.map((story, i) => {
+            const storyKey = `${story.author}_${story._id}`;
+            const viewed = JSON.parse(localStorage.getItem('viewedStories') || '{}')[storyKey];
+            return (
+            <div key={i} style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => {
+              const viewed = JSON.parse(localStorage.getItem('viewedStories') || '{}');
+              viewed[storyKey] = true;
+              localStorage.setItem('viewedStories', JSON.stringify(viewed));
+              navigate(`/profile/${story.author}`);
+            }}>
+              <div className={`story-circle${viewed ? ' viewed' : ''}`} style={{ background: story.audience === 'close_friends' ? '#22c55e' : '' }}>
+                <div className="story-circle-inner" style={{ backgroundImage: story.media ? `url(${story.media})` : 'none' }} />
+                {story.audience === 'close_friends' && (
+                  <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#22c55e', border: '2px solid var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Lock size={8} color="#fff" />
                   </div>
-                  <span style={{ fontSize: '10px', display: 'block', textAlign: 'center', marginTop: '4px' }}>{story.author}</span>
-                </div>
-                );
-              })
-            ) : (
-               <div className="clear-state">
-                 <button onClick={() => setShowStoryCreator(true)} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', fontWeight: 600, fontSize: '13px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                   <Plus size={14} />
-                   Create the first story
-                 </button>
-               </div>
-            )}
+                )}
+              </div>
+              <span style={{ fontSize: '10px', display: 'block', textAlign: 'center', marginTop: '4px', color: 'var(--text-color)' }}>{story.author}</span>
+            </div>
+            );
+          })}
         </div>
 
         {/* Feed Section */}
