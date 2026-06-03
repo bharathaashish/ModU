@@ -109,7 +109,7 @@ export default function Discover() {
       const [usersRes, postsRes, discRes, hubsRes, commRes, joinedRes] = await Promise.all([
         fetch(`/api/users?currentUsername=${user?.username || ''}`),
         fetch('/api/posts'),
-        fetch('/api/posts/discussions'),
+        fetch(`/api/posts/discussions?username=${user?.username || ''}&sort=trending`),
         fetch('/api/hubs'),
         fetch('/api/communities'),
         user ? fetch(`/api/community/joined/${user.username}`) : Promise.resolve({ ok: false })
@@ -178,23 +178,7 @@ export default function Discover() {
 
       setInterestPosts(scored);
 
-      // Score discussions by interest relevance
-      const scoredDiscussions = discussionsList
-        .map(d => {
-          const text = [d.title, d.content, ...(d.tags || [])].filter(Boolean).join(' ').toLowerCase();
-          let score = 0;
-          for (const { interest, keywords } of INTEREST_KEYWORDS) {
-            if (!myInterests.includes(interest)) continue;
-            for (const kw of keywords) {
-              if (text.includes(kw)) { score += 3; break; }
-            }
-          }
-          score += Math.min(d.comments || 0, 5);
-          return { ...d, _score: score };
-        })
-        .sort((a, b) => b._score - a._score);
-
-      setDiscussions(scoredDiscussions);
+      setDiscussions(discussionsList);
       setHubs(hubsList);
       setCommunities(commList);
       setLoading(false);

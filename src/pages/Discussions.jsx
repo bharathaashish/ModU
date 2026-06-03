@@ -1,32 +1,9 @@
 import { useAuth } from '../context/AuthContext';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, MessageCircle, X, Send, BarChart3, MoreHorizontal, Trash2, Search, Image, Heart, Hash } from 'lucide-react';
+import { ArrowLeft, Plus, MessageCircle, X, Send, BarChart3, MoreHorizontal, Trash2, Search, Image, Heart, Hash, ChevronDown } from 'lucide-react';
 import Avatar from '../components/Avatar';
 import ConfirmModal from '../components/ConfirmModal';
-
-const INTEREST_KEYWORDS = [
-  { interest: 'gaming', keywords: ['valorant', 'minecraft', 'elden ring', 'gaming', 'nintendo', 'playstation', 'xbox', 'pc gaming', 'league of legends', 'fortnite', 'call of duty', 'gta', 'roblox', 'steam', 'esports', 'speedrun', 'retro', 'arcade', 'rpg', 'fps'] },
-  { interest: 'anime', keywords: ['anime', 'manga', 'naruto', 'one piece', 'attack on titan', 'aot', 'jujutsu kaisen', 'demon slayer', 'dragon ball', 'pokemon', 'studio ghibli', 'spirited away', 'death note', 'fullmetal', 'hunter x hunter', 'cosplay', 'waifu', 'otaku', 'shonen', 'isekai'] },
-  { interest: 'movies', keywords: ['movie', 'film', 'cinema', 'netflix', 'marvel', 'dc', 'hollywood', 'bollywood', 'oscar', 'thriller', 'horror', 'comedy', 'drama', 'documentary', 'sci-fi', 'imdb', 'blockbuster', 'director', 'screenplay', 'animation'] },
-  { interest: 'music', keywords: ['music', 'song', 'album', 'spotify', 'concert', 'band', 'guitar', 'piano', 'hip hop', 'rock', 'pop', 'jazz', 'classical', 'lofi', 'playlist', 'singer', 'producer', 'festival', 'vinyl', 'beat'] },
-  { interest: 'art', keywords: ['art', 'drawing', 'painting', 'sketch', 'digital art', 'illustration', 'watercolor', 'acrylic', 'canvas', 'artist', 'gallery', 'exhibition', 'sculpture', 'portrait', 'abstract', 'surreal', 'creative', 'sketchbook', 'ink', 'traditional'] },
-  { interest: 'design', keywords: ['design', 'ui', 'ux', 'graphic design', 'typography', 'logo', 'branding', 'figma', 'photoshop', 'illustrator', 'canva', 'color palette', 'wireframe', 'prototype', 'motion', '3d', 'blender', 'minimal', 'layout', 'visual'] },
-  { interest: 'photography', keywords: ['photography', 'photo', 'camera', 'portrait', 'landscape', 'street photography', 'sony', 'canon', 'nikon', 'fujifilm', 'film photography', 'edit', 'lightroom', 'capture', 'lens', 'aperture', 'composition', 'golden hour', 'night photography', 'vintage'] },
-  { interest: 'technology', keywords: ['technology', 'programming', 'coding', 'ai', 'artificial intelligence', 'web dev', 'react', 'javascript', 'python', 'machine learning', 'blockchain', 'cybersecurity', 'app dev', 'startup', 'saas', 'cloud', 'devops', 'data science', 'ui/ux', 'figma'] },
-  { interest: 'coding', keywords: ['coding', 'programming', 'javascript', 'python', 'java', 'rust', 'go lang', 'typescript', 'react', 'node.js', 'docker', 'api', 'algorithm', 'open source', 'github', 'terminal', 'debug', 'framework', 'backend', 'frontend'] },
-  { interest: 'ai', keywords: ['ai', 'artificial intelligence', 'machine learning', 'deep learning', 'chatgpt', 'llm', 'neural network', 'gpt', 'openai', 'stable diffusion', 'midjourney', 'prompt', 'automation', 'computer vision', 'nlp', 'tensorflow', 'pytorch', 'data', 'model', 'inference'] },
-  { interest: 'science', keywords: ['science', 'physics', 'biology', 'chemistry', 'space', 'nasa', 'astronomy', 'research', 'lab', 'experiment', 'quantum', 'dna', 'evolution', 'climate', 'particle', 'telescope', 'mars', 'genetics', 'neuroscience', 'discovery'] },
-  { interest: 'books', keywords: ['book', 'reading', 'novel', 'author', 'library', 'fantasy', 'sci-fi', 'fiction', 'nonfiction', 'bestseller', 'thriller', 'mystery', 'biography', 'philosophy', 'self-help', 'page-turner', 'literature', 'poetry', 'ebook', 'paperback'] },
-  { interest: 'fitness', keywords: ['fitness', 'gym', 'workout', 'bodybuilding', 'yoga', 'cardio', 'crossfit', 'running', 'marathon', 'pilates', 'protein', 'calisthenics', 'weightlifting', 'hiit', 'meditation', 'mindfulness', 'nutrition', 'diet', 'abs', 'strength'] },
-  { interest: 'health', keywords: ['health', 'wellness', 'mental health', 'sleep', 'self-care', 'therapy', 'anxiety', 'stress', 'mindfulness', 'meditation', 'immune', 'vitamin', 'healthy', 'recovery', 'hydration', 'skin care', 'gut health', 'hormone', 'energy', 'balance'] },
-  { interest: 'food', keywords: ['food', 'cooking', 'baking', 'recipe', 'restaurant', 'pizza', 'sushi', 'pasta', 'dessert', 'vegan', 'vegetarian', 'keto', 'meal prep', 'street food', 'brunch', 'coffee', 'wine', 'cocktail', 'chef', 'gourmet'] },
-  { interest: 'travel', keywords: ['travel', 'photography', 'adventure', 'backpacking', 'hiking', 'beach', 'mountains', 'road trip', 'vacation', 'explore', 'culture', 'wanderlust', 'solo travel', 'budget travel', 'luxury travel', 'nature', 'sunset', 'camping', 'roadtrip', 'destination'] },
-  { interest: 'sports', keywords: ['sports', 'football', 'soccer', 'basketball', 'cricket', 'tennis', 'formula 1', 'nfl', 'nba', 'uefa', 'olympics', 'athlete', 'training', 'championship', 'league', 'stadium', 'goal', 'match', 'score', 'highlight'] },
-  { interest: 'finance', keywords: ['finance', 'investing', 'stock', 'crypto', 'bitcoin', 'trading', 'savings', 'budget', 'passive income', 'real estate', 'dividend', 'portfolio', 'market', 'wealth', 'retirement', 'debt', 'credit', 'tax', 'financial', 'money'] },
-  { interest: 'productivity', keywords: ['productivity', 'focus', 'time management', 'habit', 'routine', 'efficiency', 'goals', 'tracking', 'todo', 'organization', 'planning', 'deep work', 'pomodoro', 'minimalism', 'discipline', 'motivation', 'notion', 'workflow', 'schedule', 'hack'] },
-  { interest: 'startups', keywords: ['startup', 'entrepreneur', 'founder', 'venture capital', 'fundraising', 'mvp', 'growth', 'scale', 'product market', 'pivot', 'accelerator', 'y combinator', 'series a', 'bootstrap', 'angel', 'pitch', 'investor', 'exit', 'saas', 'disrupt'] }
-];
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -38,27 +15,6 @@ function timeAgo(dateStr) {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d`;
   return `${Math.floor(days / 7)}w`;
-}
-
-function scoreDiscussion(discussion, userInterests) {
-  const text = [discussion.title, discussion.content, ...(discussion.tags || [])].filter(Boolean).join(' ').toLowerCase();
-  let score = 0;
-  const matched = new Set();
-  for (const { interest, keywords } of INTEREST_KEYWORDS) {
-    if (!userInterests?.includes(interest)) continue;
-    for (const kw of keywords) {
-      if (text.includes(kw)) {
-        matched.add(interest);
-        score += 3;
-        break;
-      }
-    }
-  }
-  for (const interest of matched) {
-    score += 2;
-  }
-  score += Math.min(discussion.comments || 0, 10);
-  return score;
 }
 
 export default function Discussions() {
@@ -76,6 +32,7 @@ export default function Discussions() {
   const [pollMode, setPollMode] = useState(false);
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortMode, setSortMode] = useState('trending');
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [tags, setTags] = useState('');
@@ -102,47 +59,25 @@ export default function Discussions() {
     setMenuOpenId(null);
   };
 
-  const fetchDiscussions = async () => {
+  const fetchDiscussions = async (searchOverride) => {
     try {
-      const res = await fetch('/api/posts/discussions');
+      const q = searchOverride !== undefined ? searchOverride : searchQuery;
+      let url = `/api/posts/discussions?username=${user?.username || ''}&sort=${sortMode}`;
+      if (q.trim()) {
+        url += `&search=${encodeURIComponent(q.trim())}`;
+      }
+      const res = await fetch(url);
       if (res.ok) {
-        const list = await res.json();
-        const userInterests = user?.interests || [];
-        setDiscussions(list.sort((a, b) => {
-          const scoreA = scoreDiscussion(a, userInterests);
-          const scoreB = scoreDiscussion(b, userInterests);
-          if (scoreB !== scoreA) return scoreB - scoreA;
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        }));
+        setDiscussions(await res.json());
       }
     } catch {}
     setLoading(false);
   };
 
-  useEffect(() => { fetchDiscussions(); }, [user]);
-
-  const normalize = (value) => (value || '').toString().toLowerCase();
-  const fuzzySearchMatch = (text, query) => {
-    const haystack = normalize(text);
-    const needle = normalize(query);
-    if (!needle) return true;
-    if (haystack.includes(needle)) return true;
-    let idx = 0;
-    for (const char of needle) {
-      idx = haystack.indexOf(char, idx);
-      if (idx === -1) return false;
-      idx += 1;
-    }
-    return true;
-  };
-
-  const filteredDiscussions = useMemo(() => {
-    if (!searchQuery.trim()) return discussions;
-    return discussions.filter(d => {
-      const searchSource = [d.title, d.content, d.username, d.tags?.join(' '), d.category].filter(Boolean).join(' ');
-      return fuzzySearchMatch(searchSource, searchQuery);
-    });
-  }, [discussions, searchQuery]);
+  useEffect(() => {
+    const timer = setTimeout(() => fetchDiscussions(), 300);
+    return () => clearTimeout(timer);
+  }, [user, sortMode, searchQuery]);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -234,10 +169,40 @@ export default function Discussions() {
         )}
       </div>
 
+      {/* Sort dropdown */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '4px 16px 8px' }}>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <select
+            value={sortMode}
+            onChange={e => setSortMode(e.target.value)}
+            style={{
+              padding: '6px 28px 6px 12px',
+              fontSize: '13px',
+              fontWeight: 600,
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)',
+              backgroundColor: 'var(--card-bg)',
+              color: 'var(--text-color)',
+              cursor: 'pointer',
+              outline: 'none',
+              appearance: 'none',
+              WebkitAppearance: 'none',
+              MozAppearance: 'none',
+              fontFamily: 'var(--font-sans)'
+            }}
+          >
+            <option value="trending">Trending</option>
+            <option value="popular">Popular</option>
+            <option value="recent">Recent</option>
+          </select>
+          <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        </div>
+      </div>
+
       {/* Content */}
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px' }}><div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>
-      ) : filteredDiscussions.length === 0 ? (
+      ) : discussions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--text-secondary)' }}>
           <MessageCircle size={48} style={{ margin: '0 auto 16px', display: 'block', opacity: 0.3 }} />
           <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-color)' }}>
@@ -255,7 +220,7 @@ export default function Discussions() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {filteredDiscussions.map(d => (
+          {discussions.map(d => (
             <div key={d._id} onClick={() => navigate(`/discussion/${d._id}`)}
               className="discussion-card"
               style={{
@@ -354,7 +319,7 @@ export default function Discussions() {
                   <MessageCircle size={14} />
                   <span>{d.comments || 0} {d.comments === 1 ? 'reply' : 'replies'}</span>
                 </div>
-                {d.poll && (
+                {d.poll?.options?.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <BarChart3 size={14} />
                     <span>{d.poll.totalVotes || 0} votes</span>

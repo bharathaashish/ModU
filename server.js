@@ -1920,18 +1920,49 @@ app.post('/api/posts', async (req, res) => {
   }
 });
 
-// GET DISCUSSION POSTS
+const INTEREST_KEYWORDS = [
+  { interest: 'gaming', keywords: ['valorant', 'minecraft', 'elden ring', 'gaming', 'nintendo', 'playstation', 'xbox', 'pc gaming', 'league of legends', 'fortnite', 'call of duty', 'gta', 'roblox', 'steam', 'esports', 'speedrun', 'retro', 'arcade', 'rpg', 'fps'] },
+  { interest: 'anime', keywords: ['anime', 'manga', 'naruto', 'one piece', 'attack on titan', 'aot', 'jujutsu kaisen', 'demon slayer', 'dragon ball', 'pokemon', 'studio ghibli', 'spirited away', 'death note', 'fullmetal', 'hunter x hunter', 'cosplay', 'waifu', 'otaku', 'shonen', 'isekai'] },
+  { interest: 'movies', keywords: ['movie', 'film', 'cinema', 'netflix', 'marvel', 'dc', 'hollywood', 'bollywood', 'oscar', 'thriller', 'horror', 'comedy', 'drama', 'documentary', 'sci-fi', 'imdb', 'blockbuster', 'director', 'screenplay', 'animation'] },
+  { interest: 'music', keywords: ['music', 'song', 'album', 'spotify', 'concert', 'band', 'guitar', 'piano', 'hip hop', 'rock', 'pop', 'jazz', 'classical', 'lofi', 'playlist', 'singer', 'producer', 'festival', 'vinyl', 'beat'] },
+  { interest: 'art', keywords: ['art', 'drawing', 'painting', 'sketch', 'digital art', 'illustration', 'watercolor', 'acrylic', 'canvas', 'artist', 'gallery', 'exhibition', 'sculpture', 'portrait', 'abstract', 'surreal', 'creative', 'sketchbook', 'ink', 'traditional'] },
+  { interest: 'design', keywords: ['design', 'ui', 'ux', 'graphic design', 'typography', 'logo', 'branding', 'figma', 'photoshop', 'illustrator', 'canva', 'color palette', 'wireframe', 'prototype', 'motion', '3d', 'blender', 'minimal', 'layout', 'visual'] },
+  { interest: 'photography', keywords: ['photography', 'photo', 'camera', 'portrait', 'landscape', 'street photography', 'sony', 'canon', 'nikon', 'fujifilm', 'film photography', 'edit', 'lightroom', 'capture', 'lens', 'aperture', 'composition', 'golden hour', 'night photography', 'vintage'] },
+  { interest: 'technology', keywords: ['technology', 'programming', 'coding', 'ai', 'artificial intelligence', 'web dev', 'react', 'javascript', 'python', 'machine learning', 'blockchain', 'cybersecurity', 'app dev', 'startup', 'saas', 'cloud', 'devops', 'data science', 'ui/ux', 'figma'] },
+  { interest: 'coding', keywords: ['coding', 'programming', 'javascript', 'python', 'java', 'rust', 'go lang', 'typescript', 'react', 'node.js', 'docker', 'api', 'algorithm', 'open source', 'github', 'terminal', 'debug', 'framework', 'backend', 'frontend'] },
+  { interest: 'ai', keywords: ['ai', 'artificial intelligence', 'machine learning', 'deep learning', 'chatgpt', 'llm', 'neural network', 'gpt', 'openai', 'stable diffusion', 'midjourney', 'prompt', 'automation', 'computer vision', 'nlp', 'tensorflow', 'pytorch', 'data', 'model', 'inference'] },
+  { interest: 'science', keywords: ['science', 'physics', 'biology', 'chemistry', 'space', 'nasa', 'astronomy', 'research', 'lab', 'experiment', 'quantum', 'dna', 'evolution', 'climate', 'particle', 'telescope', 'mars', 'genetics', 'neuroscience', 'discovery'] },
+  { interest: 'books', keywords: ['book', 'reading', 'novel', 'author', 'library', 'fantasy', 'sci-fi', 'fiction', 'nonfiction', 'bestseller', 'thriller', 'mystery', 'biography', 'philosophy', 'self-help', 'page-turner', 'literature', 'poetry', 'ebook', 'paperback'] },
+  { interest: 'fitness', keywords: ['fitness', 'gym', 'workout', 'bodybuilding', 'yoga', 'cardio', 'crossfit', 'running', 'marathon', 'pilates', 'protein', 'calisthenics', 'weightlifting', 'hiit', 'meditation', 'mindfulness', 'nutrition', 'diet', 'abs', 'strength'] },
+  { interest: 'health', keywords: ['health', 'wellness', 'mental health', 'sleep', 'self-care', 'therapy', 'anxiety', 'stress', 'mindfulness', 'meditation', 'immune', 'vitamin', 'healthy', 'recovery', 'hydration', 'skin care', 'gut health', 'hormone', 'energy', 'balance'] },
+  { interest: 'food', keywords: ['food', 'cooking', 'baking', 'recipe', 'restaurant', 'pizza', 'sushi', 'pasta', 'dessert', 'vegan', 'vegetarian', 'keto', 'meal prep', 'street food', 'brunch', 'coffee', 'wine', 'cocktail', 'chef', 'gourmet'] },
+  { interest: 'travel', keywords: ['travel', 'photography', 'adventure', 'backpacking', 'hiking', 'beach', 'mountains', 'road trip', 'vacation', 'explore', 'culture', 'wanderlust', 'solo travel', 'budget travel', 'luxury travel', 'nature', 'sunset', 'camping', 'roadtrip', 'destination'] },
+  { interest: 'sports', keywords: ['sports', 'football', 'soccer', 'basketball', 'cricket', 'tennis', 'formula 1', 'nfl', 'nba', 'uefa', 'olympics', 'athlete', 'training', 'championship', 'league', 'stadium', 'goal', 'match', 'score', 'highlight'] },
+  { interest: 'finance', keywords: ['finance', 'investing', 'stock', 'crypto', 'bitcoin', 'trading', 'savings', 'budget', 'passive income', 'real estate', 'dividend', 'portfolio', 'market', 'wealth', 'retirement', 'debt', 'credit', 'tax', 'financial', 'money'] },
+  { interest: 'productivity', keywords: ['productivity', 'focus', 'time management', 'habit', 'routine', 'efficiency', 'goals', 'tracking', 'todo', 'organization', 'planning', 'deep work', 'pomodoro', 'minimalism', 'discipline', 'motivation', 'notion', 'workflow', 'schedule', 'hack'] },
+  { interest: 'startups', keywords: ['startup', 'entrepreneur', 'founder', 'venture capital', 'fundraising', 'mvp', 'growth', 'scale', 'product market', 'pivot', 'accelerator', 'y combinator', 'series a', 'bootstrap', 'angel', 'pitch', 'investor', 'exit', 'saas', 'disrupt'] }
+];
+
+// GET DISCUSSION POSTS with interest filtering + sorting
 app.get('/api/posts/discussions', async (req, res) => {
   try {
-    const { currentUsername } = req.query;
-    let discussions = await Post.find({ type: 'discussion' })
-      .sort({ createdAt: -1 })
-      .lean();
+    const { username, sort: sortParam, search } = req.query;
+    const sortMode = ['trending', 'popular', 'recent'].includes(sortParam) ? sortParam : 'trending';
+
+    let discussions = await Post.find({ type: 'discussion' }).lean();
+
+    // Get user interests if username provided
+    let userInterests = [];
+    if (username) {
+      const userDoc = await User.findOne({ username }).select('interests').lean();
+      if (userDoc) userInterests = userDoc.interests || [];
+    }
+
     // Block + profile mute filter
-    if (currentUsername) {
-      const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers profileMutedUsers').lean();
+    if (username) {
+      const currentUser = await User.findOne({ username }).select('blockedUsers profileMutedUsers').lean();
       const blockedUsernames = (currentUser?.blockedUsers || []).map(b => b.username);
-      const blockers = await User.find({ 'blockedUsers.username': currentUsername }).select('username').lean();
+      const blockers = await User.find({ 'blockedUsers.username': username }).select('username').lean();
       const blockerUsernames = blockers.map(b => b.username);
       const allBlocked = new Set([...blockedUsernames, ...blockerUsernames]);
       const mutedUsernames = new Set();
@@ -1945,18 +1976,61 @@ app.get('/api/posts/discussions', async (req, res) => {
         discussions = discussions.filter(d => !hidden.has(d.username));
       }
     }
+
+    // Interest filtering (skip if search is active)
+    if (search && search.trim()) {
+      const q = search.toLowerCase();
+      discussions = discussions.filter(d => {
+        const text = [d.title, d.content, ...(d.tags || [])].filter(Boolean).join(' ').toLowerCase();
+        return text.includes(q);
+      });
+    } else if (userInterests.length > 0) {
+      discussions = discussions.filter(d => {
+        const text = [d.title, d.content, ...(d.tags || [])].filter(Boolean).join(' ').toLowerCase();
+        for (const { interest, keywords } of INTEREST_KEYWORDS) {
+          if (!userInterests.includes(interest)) continue;
+          for (const kw of keywords) {
+            if (text.includes(kw)) return true;
+          }
+        }
+        return false;
+      });
+    }
+
+    // Apply sort
+    if (sortMode === 'recent') {
+      discussions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (sortMode === 'popular') {
+      discussions.sort((a, b) => ((b.comments || 0) + (b.likes || 0)) - ((a.comments || 0) + (a.likes || 0)));
+    } else {
+      // trending: engagement / age^1.5
+      const now = Date.now();
+      discussions.sort((a, b) => {
+        const engagementA = (a.comments || 0) + (a.likes || 0) + 1;
+        const hoursAgeA = (now - new Date(a.createdAt).getTime()) / 3600000;
+        const scoreA = engagementA / Math.pow((hoursAgeA + 2), 1.5);
+
+        const engagementB = (b.comments || 0) + (b.likes || 0) + 1;
+        const hoursAgeB = (now - new Date(b.createdAt).getTime()) / 3600000;
+        const scoreB = engagementB / Math.pow((hoursAgeB + 2), 1.5);
+
+        return scoreB - scoreA;
+      });
+    }
+
     // Attach profilePhoto (respecting photo visibility)
     const discUsernames = [...new Set(discussions.map(d => d.username))];
     const discUsers = await User.find({ username: { $in: discUsernames } }).select('username profilePhoto photoVisibility followers').lean();
     const discPhotoMap = {};
     for (const u of discUsers) {
-      if (canViewPhoto(u, currentUsername)) {
+      if (canViewPhoto(u, username)) {
         discPhotoMap[u.username] = u.profilePhoto || '';
       } else {
         discPhotoMap[u.username] = '';
       }
     }
     discussions = discussions.map(d => ({ ...d, profilePhoto: discPhotoMap[d.username] || '' }));
+
     res.json(discussions);
   } catch (err) {
     console.error('Discussions fetch error:', err);
