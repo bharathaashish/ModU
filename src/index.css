@@ -42,19 +42,19 @@
 
 /* === THEME: Minimalist Dark Mode === */
 [data-theme="dark"] {
-  --bg-color: #1C1C1A;
-  --card-bg: #252523;
-  --surface-alt: #2E2E2C;
-  --text-color: #F0F0EE;
-  --text-secondary: #999997;
-  --text-tertiary: #666664;
-  --border-color: #3A3A38;
-  --icon-color: #D0D0CE;
-  --active-color: #F0F0EE;
-  --active-text: #111111;
-  --inactive-color: #555553;
-  --divider-color: #333331;
-  --overlay-bg: rgba(0,0,0,0.5);
+  --bg-color: #000000;
+  --card-bg: #111111;
+  --surface-alt: #1A1A1A;
+  --text-color: #FFFFFF;
+  --text-secondary: #999999;
+  --text-tertiary: #666666;
+  --border-color: #2A2A2A;
+  --icon-color: #CCCCCC;
+  --active-color: #FFFFFF;
+  --active-text: #000000;
+  --inactive-color: #444444;
+  --divider-color: #222222;
+  --overlay-bg: rgba(0,0,0,0.7);
 }
 
 * {

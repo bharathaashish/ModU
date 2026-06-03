@@ -401,7 +401,19 @@ export default function Messages() {
             <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', color: 'var(--text-color)' }}>
               <ArrowLeft size={22} />
             </button>
-            <Avatar username={selectedUser} image={targetUser?.profilePhoto} size={42} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', flexShrink: 0 }}>
+              <Avatar username={selectedUser} image={targetUser?.profilePhoto} size={42} />
+              {(() => {
+                const partnerLastMsg = messages.filter(m => m.sender === selectedUser).pop();
+                const active = partnerLastMsg?.timestamp && (Date.now() - new Date(partnerLastMsg.timestamp).getTime()) < 300000;
+                return active ? (
+                  <div style={{ fontSize: '8px', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: '1.2' }}>
+                    <div>recently</div>
+                    <div>active</div>
+                  </div>
+                ) : null;
+              })()}
+            </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {targetLoading ? 'Loading...' : getDisplayName(selectedUser)}
@@ -757,16 +769,21 @@ export default function Messages() {
                   const partnerName = conv.partnerInfo?.username || conv.partner;
                   const displayName = nicknames[partnerName] || partnerName;
                   const time = timeAgo(conv.lastTimestamp);
-                  const isOnline = conv.lastTimestamp && (Date.now() - new Date(conv.lastTimestamp).getTime() < 300000);
+                  const isOnline = conv.lastTimestamp && (Date.now() - new Date(conv.lastTimestamp).getTime() < 3000000);
                   const statusText = isOnline ? 'Recently active' : '';
+                  const statusLines = statusText.toLowerCase().split(' ');
                   return (
                     <div key={partnerName} onClick={() => navigate(`/messages/${partnerName}`)}
                       style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', backgroundColor: 'var(--card-bg)', borderRadius: '14px', border: '1px solid var(--border-color)', cursor: 'pointer', transition: 'all 0.2s ease' }}
                       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; ; }}
                       onMouseLeave={e => { e.currentTarget.style.transform = ''; ; }}>
-                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
                         <Avatar username={partnerName} image={conv.partnerInfo?.profilePhoto} size={50} />
-                        {statusText && <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', fontSize: '9px', fontWeight: 600, color: 'var(--active-text)', backgroundColor: 'var(--text-color)', padding: '1px 5px', borderRadius: '8px', lineHeight: '1.4', whiteSpace: 'nowrap' }}>{statusText}</div>}
+                        {statusText && (
+                          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: '1.25' }}>
+                            {statusLines.map((w, i) => <div key={i}>{w}</div>)}
+                          </div>
+                        )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {conv.partnerInfo?.name && (
