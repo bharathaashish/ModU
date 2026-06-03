@@ -278,7 +278,7 @@ export default function Profile() {
         <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '20px 24px' }}>
 
           {/* Avatar + actions row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
+          <div className="profile-actions-row">
             <div style={{ marginTop: '-52px', cursor: userStories.length > 0 ? 'pointer' : 'default' }}
               onClick={() => {
                 if (userStories.length > 0) setViewingStories({ stories: userStories, index: 0 });
@@ -293,33 +293,34 @@ export default function Profile() {
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="profile-actions-buttons">
               {isOwnProfile ? (
                 <>
-                  <button onClick={() => navigate('/settings')} className="ghost-button">
+                  <button onClick={() => navigate('/settings')} className="ghost-button profile-hero-btn">
                     Settings
                   </button>
-                  <button onClick={() => navigate('/edit-profile')} className="ghost-button">
+                  <button onClick={() => navigate('/edit-profile')} className="ghost-button profile-hero-btn">
                     Edit Profile
                   </button>
                   <button onClick={() => navigate('/settings/close-friends')}
+                    className="profile-hero-btn"
                     style={{ padding: '7px 14px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Heart size={14} color="var(--text-color)" /> Close Friends
                   </button>
-                  <button onClick={() => setShowPostModal(true)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: "var(--active-color)", border: 'none', borderRadius: 'var(--radius-sm)', color: 'var(--active-text)', cursor: 'pointer', transition: 'background-color 0.15s' }}>
+                  <button onClick={() => setShowPostModal(true)} className="profile-plus-btn">
                     <Plus size={18} />
                   </button>
                 </>
               ) : (
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   {isBlocked ? (
                     <span style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', color: 'var(--text-tertiary)' }}>Blocked</span>
                   ) : (
                     <>
-                      <button onClick={() => handleFollow(profileUsername)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: isFollowing || hasPendingRequest ? '1px solid var(--border-color)' : 'none', backgroundColor: isFollowing || hasPendingRequest ? 'transparent' : 'var(--text-color)', color: isFollowing || hasPendingRequest ? 'var(--text-secondary)' : 'var(--active-text)', cursor: 'pointer', transition: 'background-color 0.15s' }}>
+                      <button onClick={() => handleFollow(profileUsername)} className="profile-hero-btn" style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: isFollowing || hasPendingRequest ? '1px solid var(--border-color)' : 'none', backgroundColor: isFollowing || hasPendingRequest ? 'transparent' : 'var(--text-color)', color: isFollowing || hasPendingRequest ? 'var(--text-secondary)' : 'var(--active-text)', cursor: 'pointer', transition: 'background-color 0.15s' }}>
                         {isFollowing ? 'Following' : (hasPendingRequest ? 'Requested' : 'Follow')}
                       </button>
-                      <button onClick={() => navigate(`/messages/${profileUsername}`)} style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>
+                      <button onClick={() => navigate(`/messages/${profileUsername}`)} className="profile-hero-btn" style={{ padding: '7px 20px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer' }}>
                         Message
                       </button>
                     </>
@@ -385,18 +386,18 @@ export default function Profile() {
           </div>
 
           {/* Stats as three columns */}
-          <div style={{ display: 'flex', marginBottom: '16px', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
-            <div style={{ flex: 1, padding: '12px 0', textAlign: 'center' }}>
+          <div className="profile-stats-row">
+            <div className="profile-stat-cell">
               <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)' }}>{userPosts.length}</div>
               <div style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginTop: '2px' }}>Posts</div>
             </div>
             <div style={{ width: '1px', backgroundColor: 'var(--border-color)' }} />
-            <div style={{ flex: 1, padding: '12px 0', textAlign: 'center', cursor: canViewContent ? 'pointer' : 'default' }} onClick={() => canViewContent && navigate(`/profile/${profileUsername}/followers`)}>
+            <div className="profile-stat-cell" style={{ cursor: canViewContent ? 'pointer' : 'default' }} onClick={() => canViewContent && navigate(`/profile/${profileUsername}/followers`)}>
               <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)' }}>{profileUser?.followers?.length || 0}</div>
               <div style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginTop: '2px' }}>Followers</div>
             </div>
             <div style={{ width: '1px', backgroundColor: 'var(--border-color)' }} />
-            <div style={{ flex: 1, padding: '12px 0', textAlign: 'center', cursor: canViewContent ? 'pointer' : 'default' }} onClick={() => canViewContent && navigate(`/profile/${profileUsername}/following`)}>
+            <div className="profile-stat-cell" style={{ cursor: canViewContent ? 'pointer' : 'default' }} onClick={() => canViewContent && navigate(`/profile/${profileUsername}/following`)}>
               <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)' }}>{profileUser?.following?.length || 0}</div>
               <div style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginTop: '2px' }}>Following</div>
             </div>
