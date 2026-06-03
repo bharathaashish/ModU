@@ -206,7 +206,7 @@ export default function CommunityServer() {
   };
 
   if (loading) {
-    return <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading community...</div>;
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>;
   }
 
   if (!community) {

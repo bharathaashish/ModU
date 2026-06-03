@@ -87,7 +87,7 @@ function scorePost(caption, userInterests, userCommunities, allCommunities, post
 }
 
 export default function Discover() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
 
   const [suggestedUsers, setSuggestedUsers] = useState([]);
@@ -150,8 +150,22 @@ export default function Discover() {
 
       const suggested = allUsers
         .filter(u => u.username !== user?.username && !followed.includes(u.username))
+        .map(u => {
+          const sharedInterests = myInterests.length > 0 && u.interests
+            ? myInterests.filter(i => u.interests.includes(i))
+            : [];
+          const isMutual = followed.some(f => (u.followers || []).includes(f));
+          let label = '';
+          if (sharedInterests.length > 0) {
+            label = sharedInterests.length === 1 ? sharedInterests[0] : `${sharedInterests[0]} +${sharedInterests.length - 1}`;
+          } else if (isMutual) {
+            label = 'Mutual connection';
+          }
+          return { ...u, _suggestionLabel: label };
+        })
+        .filter(u => u._suggestionLabel)
         .sort((a, b) => mutualScore(b) - mutualScore(a))
-        .slice(0, 10);
+        .slice(0, 5);
 
       setSuggestedUsers(suggested);
 
@@ -214,8 +228,10 @@ export default function Discover() {
   const handleFollow = async (e, username) => {
     e.stopPropagation();
     try {
-      const res = await fetch(`/api/users/${username}/follow`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentUsername: user?.username }) });
+      const res = await fetch(`/api/users/${user?.username}/follow`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetUsername: username }) });
       if (res.ok) {
+        const updatedUser = await res.json();
+        updateUser(updatedUser);
         setUserResults(prev => prev.map(u => u.username === username ? { ...u, hasPendingRequest: true } : u));
         setSuggestedUsers(prev => prev.map(u => u.username === username ? { ...u, hasPendingRequest: true } : u));
       }
@@ -226,8 +242,8 @@ export default function Discover() {
 
   if (loading) {
     return (
-      <div style={{ padding: '20px', color: 'var(--text-color)', textAlign: 'center' }}>
-        Loading...
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     );
   }
@@ -364,7 +380,7 @@ export default function Discover() {
                     <Avatar username={u.username} image={u.profilePhoto} size={56} />
                     <div style={{ textAlign: 'center', width: '100%', overflow: 'hidden' }}>
                       <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name || u.username}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.interests?.slice(0, 1).join(', ') || 'New here'}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u._suggestionLabel}</div>
                     </div>
                     <button
                       onClick={(e) => handleFollow(e, u.username)}

@@ -416,7 +416,7 @@ export default function Messages() {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {targetLoading ? 'Loading...' : getDisplayName(selectedUser)}
+                {targetLoading ? <div style={{ display: 'inline-block', width: '18px', height: '18px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : getDisplayName(selectedUser)}
                 {nicknames[selectedUser] && <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 400 }}>(@{selectedUser})</span>}
                 {isDmMuted && <BellOff size={12} color="var(--text-tertiary)" />}
               </div>

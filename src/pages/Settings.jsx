@@ -72,7 +72,7 @@ export default function Settings() {
             <span>ACTIVITY</span>
           </div>
           {loading ? (
-            <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>Loading activity...</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}><div style={{ display: 'inline-block', width: '20px', height: '20px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
               {myActivity.map(item => (
@@ -132,7 +132,7 @@ export default function Settings() {
           </div>
           <div>
             {loading ? (
-              <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading...</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}><div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>
             ) : (
               <>
                 {activityTab === 'all' || activityTab === 'posts' ? (

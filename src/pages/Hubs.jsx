@@ -67,7 +67,7 @@ export default function Hubs() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading hubs...</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}><div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>
       ) : hubs.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 20px', color: 'var(--text-secondary)' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏠</div>

@@ -26,7 +26,7 @@ export default function LikedPosts() {
       });
   }, [user]);
 
-  if (loading) return <div className="app-container" style={{ justifyContent: 'center', minHeight: 'calc(100vh - 120px)' }}><div>Loading...</div></div>;
+  if (loading) return <div className="app-container" style={{ justifyContent: 'center', minHeight: 'calc(100vh - 120px)' }}><div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>;
 
   return (
     <div className="app-container" style={{ padding: '16px', justifyContent: 'flex-start' }}>

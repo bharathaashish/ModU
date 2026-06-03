@@ -28,7 +28,7 @@ export default function PostPage() {
         {post ? (
           <PostViewer post={post} onClose={() => navigate(-1)} onLikeUpdate={(updated) => setPost(updated)} />
         ) : (
-          <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading post...</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' }}><div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>
         )}
       </div>
     </div>

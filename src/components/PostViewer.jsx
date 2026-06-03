@@ -8,14 +8,14 @@ import ConfirmModal from '../components/ConfirmModal';
 const timeAgo = (date) => {
   const diff = Date.now() - new Date(date).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return `${days}d`;
   const weeks = Math.floor(days / 7);
-  if (weeks < 4) return `${weeks}w ago`;
+  if (weeks < 4) return `${weeks}w`;
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
@@ -195,10 +195,9 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
 
   if (!post) return null;
 
-  const sortedComments = comments.slice().sort((a, b) => {
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
-
+  const sortedComments = comments.slice().sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
   const visibleComments = showAllComments ? sortedComments : sortedComments.slice(0, 3);
 
   return (
@@ -219,6 +218,7 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
         }}
         onClick={e => e.stopPropagation()}
       >
+        {/* Close button */}
         <button onClick={onClose}
           style={{
             position: 'absolute', top: '12px', right: '12px',
@@ -229,37 +229,69 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
           <X size={20} />
         </button>
 
-        {/* Post Header */}
-        <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, cursor: 'pointer' }} onClick={() => navigate(`/profile/${post.username}`)}>
-            <Avatar username={post?.username} image={post?.profilePhoto} size={32} />
-            <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-color)' }}>{post.username}</span>
+        {/* ── Post Header ── */}
+        <div style={{
+          padding: '12px 16px',
+          display: 'flex', alignItems: 'center', gap: '12px',
+          borderBottom: '1px solid var(--border-color)'
+        }}>
+          {/* Left: avatar + username — clickable to profile */}
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flex: 1, minWidth: 0 }}
+            onClick={() => navigate(`/profile/${post.username}`)}
+          >
+            <Avatar username={post?.username} image={post?.profilePhoto} size={36} />
+            <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-color)', whiteSpace: 'nowrap' }}>
+              {post.username}
+            </span>
           </div>
-          {post.username !== user?.username && (
-            <button onClick={async () => {
-              try {
-                const res = await fetch(`/api/users/${user.username}/follow`, {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ targetUsername: post.username })
-                });
-                if (res.ok) { const updatedUser = await res.json(); updateUser(updatedUser); }
-              } catch (err) { console.error('Follow error', err); }
-            }}
-              style={{ padding: '4px 12px', backgroundColor: user?.following?.includes(post.username) ? 'var(--border-color)' : 'var(--text-color)', border: 'none', borderRadius: '6px', color: user?.following?.includes(post.username) ? 'var(--text-secondary)' : 'var(--active-text)', fontWeight: 600, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
+
+          {/* Center: timestamp — pushed away from username, before action buttons */}
+          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            {timeAgo(post.createdAt)}
+          </span>
+
+          {/* Right: Follow button OR ··· menu */}
+          {post.username !== user?.username ? (
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/users/${user.username}/follow`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targetUsername: post.username })
+                  });
+                  if (res.ok) { const updatedUser = await res.json(); updateUser(updatedUser); }
+                } catch (err) { console.error('Follow error', err); }
+              }}
+              style={{
+                padding: '5px 14px', flexShrink: 0,
+                backgroundColor: user?.following?.includes(post.username) ? 'transparent' : 'var(--text-color)',
+                border: '1.5px solid var(--text-color)',
+                borderRadius: '8px',
+                color: user?.following?.includes(post.username) ? 'var(--text-secondary)' : 'var(--active-text)',
+                fontWeight: 600, fontSize: '12px', cursor: 'pointer'
+              }}>
               {user?.following?.includes(post.username) ? 'Following' : 'Follow'}
             </button>
-          )}
-          {post.username === user?.username && (
-            <div style={{ position: 'relative' }}>
-              <button onClick={() => setShowMenu(!showMenu)} style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}>
+          ) : (
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}>
                 <MoreHorizontal size={20} />
               </button>
               {showMenu && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setShowMenu(false)} />
-                  <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: '160px', overflow: 'hidden' }}>
-                    <button onClick={() => { setShowMenu(false); setShowDeleteConfirm(true); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontWeight: 500 }}>
+                  <div style={{
+                    position: 'absolute', top: '100%', right: 0, zIndex: 51,
+                    backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)',
+                    borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                    minWidth: '160px', overflow: 'hidden'
+                  }}>
+                    <button
+                      onClick={() => { setShowMenu(false); setShowDeleteConfirm(true); }}
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e53e3e', fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontWeight: 500 }}>
                       Delete Post
                     </button>
                   </div>
@@ -269,8 +301,9 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
           )}
         </div>
 
-        {/* Post Image */}
-        <div style={{ width: '100%', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', maxHeight: '50vh', position: 'relative', cursor: 'pointer' }}
+        {/* ── Post Image ── */}
+        <div
+          style={{ width: '100%', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', maxHeight: '50vh', position: 'relative', cursor: 'pointer' }}
           onClick={() => {
             const now = Date.now();
             const timeSince = now - lastTapRef.current;
@@ -280,7 +313,8 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
               setShowHeartAnimation(true);
               setTimeout(() => setShowHeartAnimation(false), 800);
             }
-          }}>
+          }}
+        >
           {post.image && (
             <img src={post.image} alt="Post" style={{ width: '100%', maxHeight: '50vh', objectFit: 'contain', userSelect: 'none' }} />
           )}
@@ -291,90 +325,125 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
           )}
         </div>
 
-        {/* Engagement Row */}
-        <div style={{ padding: '12px 16px', display: 'flex', gap: '16px', borderBottom: '1px solid var(--border-color)' }}>
-          <button onClick={handleLike} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-            <Heart size={26} style={{ color: isLiked ? 'var(--text-color)' : 'var(--text-color)', fill: isLiked ? 'var(--text-color)' : 'none', transition: 'all 0.2s' }} />
+        {/* ── Engagement Row ── */}
+        <div style={{ padding: '12px 16px', display: 'flex', gap: '16px', alignItems: 'center', borderBottom: '1px solid var(--border-color)' }}>
+          <button onClick={handleLike} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}>
+            <Heart size={26} style={{ color: 'var(--text-color)', fill: isLiked ? 'var(--text-color)' : 'none', transition: 'all 0.2s' }} />
           </button>
-          <button onClick={() => setShowComments(!showComments)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-            <MessageCircle size={26} style={{ color: showComments ? 'var(--text-color)' : 'var(--text-color)' }} />
+          <button onClick={() => setShowComments(!showComments)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}>
+            <MessageCircle size={26} style={{ color: 'var(--text-color)' }} />
           </button>
-          <button onClick={() => { setShowShareMenu(!showShareMenu); setShowComments(false); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-            <Share2 size={26} style={{ color: showShareMenu ? 'var(--text-color)' : 'var(--text-color)' }} />
+          <button onClick={() => { setShowShareMenu(!showShareMenu); setShowComments(false); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}>
+            <Share2 size={26} style={{ color: 'var(--text-color)' }} />
           </button>
           <div style={{ flex: 1 }} />
-          <button onClick={handleSave} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+          <button onClick={handleSave} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}>
             <Bookmark size={26} style={{ color: 'var(--text-color)', fill: isSaved ? 'var(--text-color)' : 'none' }} />
           </button>
         </div>
 
-        {/* Like Count */}
-        <div style={{ padding: '12px 16px', fontWeight: 600, fontSize: '14px' }}>
+        {/* ── Like Count ── */}
+        <div style={{ padding: '10px 16px', fontWeight: 600, fontSize: '14px', color: 'var(--text-color)' }}>
           {likeCount > 0 && post?.likedBy?.[0] ? (
             <span>Liked by <strong>{post.likedBy[0]}</strong>{likeCount > 1 ? ` and ${likeCount - 1} others` : ''}</span>
           ) : (
-            <span>{likeCount} likes</span>
+            <span>{likeCount} {likeCount === 1 ? 'like' : 'likes'}</span>
           )}
-          {saveSuccess && <span style={{ marginLeft: '8px', color: 'var(--text-color)', fontSize: '12px', fontWeight: 500 }}>Post saved!</span>}
+          {saveSuccess && <span style={{ marginLeft: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500 }}>Post saved!</span>}
         </div>
 
-        {/* Post Content */}
+        {/* ── Post Caption ── */}
         {post.content && (
-          <div style={{ padding: '0 16px 12px', fontSize: '14px' }}>
-            <span style={{ fontWeight: 600, marginRight: '8px', cursor: 'pointer' }} onClick={() => { onClose(); navigate(`/profile/${post.username}`); }}>{post.username}</span>
+          <div style={{ padding: '0 16px 12px', fontSize: '14px', color: 'var(--text-color)' }}>
+            <span
+              style={{ fontWeight: 700, marginRight: '8px', cursor: 'pointer' }}
+              onClick={() => { onClose(); navigate(`/profile/${post.username}`); }}
+            >
+              {post.username}
+            </span>
             {post.content}
           </div>
         )}
 
-        {/* Share Menu */}
+        {/* ── Share Menu ── */}
         {showShareMenu && (
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
             <button onClick={handleShare}
-              style={{ width: '100%', padding: '10px 16px', backgroundColor: "var(--active-color)", color: 'var(--active-text)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>
+              style={{ width: '100%', padding: '10px 16px', backgroundColor: 'var(--active-color)', color: 'var(--active-text)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>
               {shareCopied ? 'Link Copied!' : 'Copy Link'}
             </button>
           </div>
         )}
 
-        {/* Comments Section — inline, no modal */}
+        {/* ── Comments Section ── */}
         {showComments && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            {/* Comment input at top of comments area */}
-            <div style={{ padding: '12px 16px', display: 'flex', gap: '10px', alignItems: 'center', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--surface-alt)' }}>
-              <Avatar username={user?.username} size={24} />
-              <input type="text" placeholder="Add a comment..." value={newComment}
+
+            {/* Comment input */}
+            <div style={{
+              padding: '10px 16px', display: 'flex', gap: '10px', alignItems: 'center',
+              borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)',
+              backgroundColor: 'var(--surface-alt)'
+            }}>
+              <Avatar username={user?.username} size={26} />
+              <input
+                type="text"
+                placeholder="Add a comment..."
+                value={newComment}
                 onChange={e => setNewComment(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleComment()}
-                style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '20px', backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '13px', outline: 'none' }} />
-              <button onClick={handleComment} disabled={!newComment.trim()}
-                style={{ padding: '6px 14px', backgroundColor: newComment.trim() ? 'var(--text-color)' : 'var(--border-color)', color: 'var(--active-text)', border: 'none', borderRadius: '20px', fontWeight: 600, cursor: newComment.trim() ? 'pointer' : 'default', fontSize: '12px' }}>
+                style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '20px', backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '13px', outline: 'none' }}
+              />
+              <button
+                onClick={handleComment}
+                disabled={!newComment.trim()}
+                style={{
+                  padding: '6px 14px', border: 'none', borderRadius: '20px',
+                  backgroundColor: newComment.trim() ? 'var(--text-color)' : 'var(--border-color)',
+                  color: 'var(--active-text)', fontWeight: 600,
+                  cursor: newComment.trim() ? 'pointer' : 'default', fontSize: '12px'
+                }}>
                 Post
               </button>
             </div>
 
-            {/* Scrollable comment list */}
+            {/* Comment list */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
               {commentsLoading ? (
-                <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-secondary)', fontSize: '13px' }}>Loading comments...</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+                  <div style={{ width: '20px', height: '20px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
               ) : sortedComments.length > 0 ? (
                 <>
                   {visibleComments.map((comment, idx) => {
-                    const isLiked = comment.likedBy?.includes(user?.username) || false;
+                    const commentIsLiked = comment.likedBy?.includes(user?.username) || false;
                     return (
-                      <div key={comment._id || idx}
-                        style={{ padding: '10px 16px', borderBottom: idx < visibleComments.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                      <div
+                        key={comment._id || idx}
+                        style={{ padding: '10px 16px', borderBottom: idx < visibleComments.length - 1 ? '1px solid var(--border-color)' : 'none' }}
+                      >
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                          <Avatar username={comment.username} size={26} />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-                              <span style={{ fontWeight: 600, fontSize: '12px', color: 'var(--text-color)', cursor: 'pointer' }}
-                                onClick={() => { onClose(); navigate(`/profile/${comment.username}`); }}>{comment.username}</span>
-                              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>· {timeAgo(comment.createdAt)}</span>
+                              <span
+                                style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text-color)', cursor: 'pointer' }}
+                                onClick={() => { onClose(); navigate(`/profile/${comment.username}`); }}
+                              >
+                                {comment.username}
+                              </span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>· {timeAgo(comment.createdAt)}</span>
                             </div>
-                            <div style={{ fontSize: '13px', color: 'var(--text-color)', lineHeight: '1.5', wordBreak: 'break-word' }}>{comment.content}</div>
+                            <div style={{ fontSize: '13px', color: 'var(--text-color)', lineHeight: '1.5', wordBreak: 'break-word' }}>
+                              {comment.content}
+                            </div>
                           </div>
-                          <button onClick={() => handleCommentLike(comment._id)}
-                            style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
-                            <Heart size={14} style={{ color: isLiked ? 'var(--text-color)' : 'var(--text-secondary)', fill: isLiked ? 'var(--text-color)' : 'none', transition: 'all 0.2s' }} />
+                          <button
+                            onClick={() => handleCommentLike(comment._id)}
+                            style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}
+                          >
+                            <Heart size={14} style={{ color: commentIsLiked ? 'var(--text-color)' : 'var(--text-secondary)', fill: commentIsLiked ? 'var(--text-color)' : 'none', transition: 'all 0.2s' }} />
                             {(comment.likes || 0) > 0 && (
                               <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{comment.likes}</span>
                             )}
@@ -384,10 +453,12 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
                     );
                   })}
                   {!showAllComments && sortedComments.length > 3 && (
-                    <button onClick={() => setShowAllComments(true)}
+                    <button
+                      onClick={() => setShowAllComments(true)}
                       style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', textAlign: 'left', transition: 'color 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.color = 'var(--text-color)'}
-                      onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
+                      onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+                    >
                       View all {sortedComments.length} comments
                     </button>
                   )}
@@ -401,12 +472,8 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
             </div>
           </div>
         )}
-
-        {/* Timestamp */}
-        <div style={{ padding: '8px 16px', fontSize: '11px', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)' }}>
-          {timeAgo(post.createdAt)}
-        </div>
       </div>
+
       {showDeleteConfirm && (
         <ConfirmModal
           key={post._id}

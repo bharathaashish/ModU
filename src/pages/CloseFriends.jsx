@@ -124,7 +124,7 @@ export default function CloseFriends() {
           </div>
           <div style={{ padding: '8px' }}>
             {loading ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>Loading...</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}><div style={{ display: 'inline-block', width: '20px', height: '20px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>
             ) : closeFriends.length === 0 ? (
               <div style={{ padding: '32px 20px', textAlign: 'center' }}>
                 <div style={{ fontSize: '14px', color: 'var(--text-color)', fontWeight: 500, marginBottom: '4px' }}>No close friends yet</div>
@@ -177,7 +177,7 @@ export default function CloseFriends() {
 
             <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
               {candidatesLoading ? (
-                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>Loading...</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}><div style={{ display: 'inline-block', width: '20px', height: '20px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>
               ) : filteredCandidates.length === 0 ? (
                 <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>
                   {searchQuery ? 'No matching users found' : 'No eligible users. Follow more people to add close friends.'}
