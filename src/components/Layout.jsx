@@ -73,10 +73,10 @@ export default function Layout() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', width: '100%' }}>
       {renderTopBar()}
       
-      <div className="layout-content" style={{ flex: 1 }}>
+      <div className="layout-content" style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: '64px' }}>
         <Outlet />
       </div>
 

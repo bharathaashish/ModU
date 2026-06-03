@@ -425,12 +425,25 @@ export default function Home() {
               setShowStoryCreator(true);
             }
           }}>
-            <div className="story-circle">
-              <div className="story-circle-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)' }}>
-                <Plus size={20} color="var(--text-color)" strokeWidth={2.5} />
-              </div>
-            </div>
-            <span style={{ fontSize: '10px', display: 'block', textAlign: 'center', marginTop: '4px', color: 'var(--text-secondary)' }}>Your Story</span>
+            {(() => {
+              const myStories = stories.filter(s => s.author === user?.username);
+              const firstStory = myStories[0];
+              return (
+                <>
+                  <div className="story-circle" style={{ position: 'relative' }}>
+                    <div className="story-circle-inner" style={firstStory ? { backgroundImage: `url(${firstStory.media})` } : { display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)' }}>
+                      {!firstStory && <Plus size={20} color="var(--text-color)" strokeWidth={2.5} />}
+                    </div>
+                    {myStories.length > 0 && (
+                      <div style={{ position: 'absolute', bottom: '0', right: '0', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'var(--active-color)', border: '2px solid var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+                        <Plus size={12} color="#fff" strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '10px', display: 'block', textAlign: 'center', marginTop: '4px', color: 'var(--text-secondary)' }}>Your Story</span>
+                </>
+              );
+            })()}
           </div>
 
           {/* Friend Stories */}

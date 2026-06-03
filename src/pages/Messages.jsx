@@ -26,7 +26,7 @@ export default function Messages() {
 
   const [messages, setMessages] = useState([]);
   const [needsAcceptance, setNeedsAcceptance] = useState(false);
-  const [acceptanceDone, setAcceptanceDone] = useState(false);
+  const [userAcceptedRef, setUserAcceptedRef] = useState(new Map()); // Track accepted convos locally
   const [newMessage, setNewMessage] = useState('');
   const [targetUser, setTargetUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -65,9 +65,9 @@ export default function Messages() {
     if (!selectedUser && user) {
       setConversationsLoading(true);
       fetch(`/api/conversations/${user.username}`)
-        .then(res => res.json())
-        .then(setConversations)
-        .catch(() => {})
+        .then(res => res.ok ? res.json() : [])
+        .then(data => setConversations(Array.isArray(data) ? data : []))
+        .catch(() => setConversations([]))
         .finally(() => setConversationsLoading(false));
     }
   }, [selectedUser, user]);
@@ -76,8 +76,8 @@ export default function Messages() {
     if (selectedUser || !user) return;
     const interval = setInterval(() => {
       fetch(`/api/conversations/${user.username}`)
-        .then(res => res.json())
-        .then(setConversations)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => setConversations(Array.isArray(data) ? data : []))
         .catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
@@ -86,10 +86,10 @@ export default function Messages() {
   useEffect(() => {
     if (user) {
       fetch(`/api/users/${user.username}/nicknames`)
-        .then(res => res.json())
+        .then(res => res.ok ? res.json() : [])
         .then(data => {
           const map = {};
-          (data || []).forEach(n => { map[n.partner] = n.nickname; });
+          (Array.isArray(data) ? data : []).forEach(n => { map[n.partner] = n.nickname; });
           setNicknames(map);
         })
         .catch(() => {});
@@ -111,8 +111,8 @@ export default function Messages() {
     if (selectedUser && user) {
       setTargetLoading(true);
       fetch(`/api/users/${selectedUser}`)
-        .then(res => res.json())
-        .then(data => { setTargetUser(data); setTargetLoading(false); })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => { if (data) setTargetUser(data); setTargetLoading(false); })
         .catch(() => setTargetLoading(false));
 
       fetch(`/api/users/${user.username}/block-check/${selectedUser}`)
@@ -121,12 +121,13 @@ export default function Messages() {
         .catch(() => {});
 
       fetch(`/api/messages/${user.username}/${selectedUser}`)
-        .then(res => res.json())
+        .then(res => res.ok ? res.json() : { messages: [], needsAcceptance: false })
         .then(data => {
           if (data && Array.isArray(data.messages)) {
             setMessages(data.messages);
-            setNeedsAcceptance(data.needsAcceptance);
-            setAcceptanceDone(false);
+            // Only show acceptance prompt if user hasn't already accepted this conversation
+            const alreadyAccepted = userAcceptedRef.has(selectedUser);
+            setNeedsAcceptance(data.needsAcceptance && !alreadyAccepted);
           }
         })
         .catch(() => {});
@@ -134,11 +135,11 @@ export default function Messages() {
       fetch(`/api/users/${user.username}/dm-muted`)
         .then(res => res.ok ? res.json() : [])
         .then(data => {
-          setIsDmMuted(!!data.find(m => m.username === selectedUser));
+          setIsDmMuted(!!(Array.isArray(data) && data.find(m => m.username === selectedUser)));
         })
         .catch(() => {});
     }
-  }, [selectedUser, user]);
+  }, [selectedUser, user, userAcceptedRef]);
 
   useEffect(() => {
     if (!selectedUser || !user) return;
@@ -215,15 +216,24 @@ export default function Messages() {
         body: JSON.stringify({ targetUsername: selectedUser })
       });
       if (res.ok) {
+        // Mark this conversation as accepted locally
+        setUserAcceptedRef(prev => new Map(prev).set(selectedUser, true));
         setNeedsAcceptance(false);
-        setAcceptanceDone(true);
+      } else {
+        setActionError('Failed to accept messages');
+        setTimeout(() => setActionError(''), 3000);
       }
-    } catch {}
+    } catch (err) {
+      setActionError('Error accepting messages');
+      setTimeout(() => setActionError(''), 3000);
+    }
   };
 
   const handleIgnore = () => {
+    if (!selectedUser) return;
+    // Mark as handled locally (don't show prompt again)
+    setUserAcceptedRef(prev => new Map(prev).set(selectedUser, true));
     setNeedsAcceptance(false);
-    setAcceptanceDone(true);
   };
 
   const handleLeave = async (communityId) => {
@@ -243,38 +253,6 @@ export default function Messages() {
 
   const getDisplayName = (partnerUsername) => {
     return nicknames[partnerUsername] || partnerUsername;
-  };
-
-  const handleDeleteForMe = async (msgId) => {
-    try {
-      console.log('[DELETE_FOR_ME] Starting:', msgId);
-      const res = await fetch(`/api/messages/${msgId}/delete/${user.username}`, { method: 'POST' });
-      console.log('[DELETE_FOR_ME] Response status:', res.status);
-      
-      if (!res.ok) {
-        // Try to parse error as JSON, fall back to status text if HTML response
-        let errMsg = 'Failed to delete message';
-        try {
-          const errData = await res.json();
-          errMsg = errData.error || errMsg;
-        } catch {
-          errMsg = `${res.status} ${res.statusText}`;
-        }
-        throw new Error(errMsg);
-      }
-      
-      const data = await res.json();
-      console.log('[DELETE_FOR_ME] Success:', data);
-      
-      setMessages(prev => prev.filter(m => m._id !== msgId));
-      setShowMsgMenu(false);
-      setActionError('');
-      console.log('[DELETE_FOR_ME] UI updated');
-    } catch (err) {
-      console.error('[DELETE_FOR_ME] Error:', err);
-      setActionError(`Error: ${err.message || 'Failed to delete message'}`);
-      setTimeout(() => setActionError(''), 4000);
-    }
   };
 
   const handleDeleteForEveryone = async (msgId) => {
@@ -298,7 +276,7 @@ export default function Messages() {
       const data = await res.json();
       console.log('[DELETE_FOR_EVERYONE] Success:', data);
       
-      setMessages(prev => prev.map(m => m._id === msgId ? { ...m, isDeleted: true, content: 'This message was deleted', image: null } : m));
+      setMessages(prev => prev.map(m => m._id === msgId ? { ...m, isDeleted: true, content: 'The user deleted this message', image: null } : m));
       setShowMsgMenu(false);
       setActionError('');
       console.log('[DELETE_FOR_EVERYONE] UI updated');
@@ -402,7 +380,12 @@ export default function Messages() {
   };
 
   const msgAge = (msg) => Date.now() - new Date(msg.timestamp).getTime();
-  const canDeleteEveryone = (msg) => msg.sender === user.username && msgAge(msg) <= 30 * 60 * 1000;
+  const canDeleteEveryone = (msg) => {
+    const isSender = msg.sender === user?.username;
+    const isRecent = msgAge(msg) <= 30 * 60 * 1000;
+    console.log('[CAN_DELETE_EVERYONE]', { sender: msg.sender, username: user?.username, isSender, age: msgAge(msg), isRecent });
+    return isSender && isRecent;
+  };
   const canEdit = (msg) => msg.sender === user.username && msgAge(msg) <= 30 * 60 * 1000;
 
   if (!user) {
@@ -410,9 +393,9 @@ export default function Messages() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', paddingBottom: '100px' }}>
+    <div style={{ height: '100%', backgroundColor: 'var(--bg-color)' }}>
       {selectedUser ? (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', maxWidth: '720px', margin: '0 auto', width: '100%' }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', maxWidth: '720px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
           {/* Chat header */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'var(--card-bg)' }}>
             <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', color: 'var(--text-color)' }}>
@@ -607,7 +590,7 @@ export default function Messages() {
                         opacity: msg.isDeleted ? 0.6 : 1,
                         fontStyle: msg.isDeleted ? 'italic' : 'normal'
                       }}>
-                        {msg.isDeleted ? 'This message was deleted' : msg.content}
+                        {msg.isDeleted ? 'The user deleted this message' : msg.content}
                         {!msg.isDeleted && msg.image && (
                           <div style={{ marginTop: '8px', borderRadius: '12px', overflow: 'hidden', maxWidth: '280px', backgroundColor: 'var(--border-color)' }}>
                             <img src={msg.image} alt="" style={{ width: '100%', display: 'block' }} />
@@ -631,10 +614,6 @@ export default function Messages() {
             <>
               <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => { setShowMsgMenu(false); setSelectedMsg(null); }} />
               <div style={{ position: 'fixed', left: `${menuPos.x}px`, top: `${menuPos.y}px`, zIndex: 91, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: '200px', overflow: 'hidden' }}>
-                <button onClick={() => { handleDeleteForMe(selectedMsg._id); }}
-                  style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e74c3c', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <X size={14} /> Delete For Me
-                </button>
                 {canDeleteEveryone(selectedMsg) && (
                   <button onClick={() => { handleDeleteForEveryone(selectedMsg._id); }}
                     style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e74c3c', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>

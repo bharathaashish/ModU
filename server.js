@@ -7,8 +7,8 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import session from 'express-session';
 
 dotenv.config();
-
 const app = express();
+
 app.use(cors({
     origin: [
     'http://localhost:5173',
@@ -251,7 +251,6 @@ const MessageSchema = new mongoose.Schema({
   content: { type: String, default: '' },
   image: { type: String, default: null },
   timestamp: { type: Date, default: Date.now },
-  deletedFor: [{ type: String }],
   isDeleted: { type: Boolean, default: false },
   editedAt: { type: Date },
   editHistory: [{ content: String, editedAt: Date }]
@@ -1523,7 +1522,7 @@ app.get('/api/messages/:user1/:user2', async (req, res) => {
         { sender: user2, receiver: user1 }
       ]
     }).sort({ timestamp: 1 });
-    const messages = allMessages.filter(m => !(m.deletedFor || []).includes(user1));
+    const messages = allMessages;
     // Check if viewer (user1) needs to accept messages from partner (user2)
     const partnerDoc = await User.findOne({ username: user2 }).select('following').lean();
     const viewerDoc = await User.findOne({ username: user1 }).select('following acceptedConversations').lean();
@@ -1686,21 +1685,7 @@ app.post('/api/conversations/:username/:partner/delete', async (req, res) => {
   }
 });
 
-// DELETE MESSAGE FOR ME
-app.post('/api/messages/:messageId/delete/:username', async (req, res) => {
-  try {
-    const { messageId, username } = req.params;
-    await Message.updateOne(
-      { _id: messageId },
-      { $addToSet: { deletedFor: username } }
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// DELETE MESSAGE FOR EVERYONE (within 30 min)
+// DELETE MESSAGE FOR EVERYONE
 app.post('/api/messages/:messageId/delete-everyone', async (req, res) => {
   try {
     const { messageId } = req.params;
@@ -1711,11 +1696,10 @@ app.post('/api/messages/:messageId/delete-everyone', async (req, res) => {
       return res.status(403).json({ error: 'Time limit expired' });
     }
     msg.isDeleted = true;
-    msg.content = 'This message was deleted';
+    msg.content = 'The user deleted this message';
     msg.image = null;
-    msg.deletedFor = [];
     await msg.save();
-    res.json({ success: true });
+    res.json({ success: true, data: msg });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -3036,6 +3020,8 @@ app.delete('/api/stories/:id', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// TEST at end
 
 const PORT = 5001;
 app.listen(PORT, () => console.log(`Backend server running on port ${PORT}`));
