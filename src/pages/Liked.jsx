@@ -34,10 +34,7 @@ export default function Liked() {
         <button onClick={handleBack} style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '4px', marginRight: '16px', display: 'flex' }}>
           <ChevronLeft size={24} />
         </button>
-        <h2 style={{ fontSize: 'var(--fs-lg)', margin: 0, fontWeight: 500, color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Heart size={20} fill="var(--text-color)" color="var(--text-color)" />
-          Liked Posts
-        </h2>
+        <h2 style={{ fontSize: 'var(--fs-lg)', margin: 0, fontWeight: 500, color: 'var(--text-color)' }}>Liked Posts</h2>
       </div>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
 
