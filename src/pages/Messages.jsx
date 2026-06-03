@@ -53,6 +53,10 @@ export default function Messages() {
   const [showMsgMenu, setShowMsgMenu] = useState(false);
   const [editingMsg, setEditingMsg] = useState(null);
   const [editContent, setEditContent] = useState('');
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchMsg, setTouchMsg] = useState(null);
+  const [actionError, setActionError] = useState('');
   const messagesEndRef = useRef(null);
 
   const selectedUser = username || location.state?.selectedUser || null;
@@ -66,6 +70,17 @@ export default function Messages() {
         .catch(() => {})
         .finally(() => setConversationsLoading(false));
     }
+  }, [selectedUser, user]);
+
+  useEffect(() => {
+    if (selectedUser || !user) return;
+    const interval = setInterval(() => {
+      fetch(`/api/conversations/${user.username}`)
+        .then(res => res.json())
+        .then(setConversations)
+        .catch(() => {});
+    }, 15000);
+    return () => clearInterval(interval);
   }, [selectedUser, user]);
 
   useEffect(() => {
@@ -126,6 +141,21 @@ export default function Messages() {
   }, [selectedUser, user]);
 
   useEffect(() => {
+    if (!selectedUser || !user) return;
+    const interval = setInterval(() => {
+      fetch(`/api/messages/${user.username}/${selectedUser}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && Array.isArray(data.messages)) {
+            setMessages(prev => data.messages.length !== prev.length ? data.messages : prev);
+          }
+        })
+        .catch(() => {});
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [selectedUser, user]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -154,6 +184,10 @@ export default function Messages() {
         setDmImage(null);
         setDmPreview('');
         if (fileInputRef.current) fileInputRef.current.value = '';
+        fetch(`/api/conversations/${user.username}`)
+          .then(res => res.json())
+          .then(setConversations)
+          .catch(() => {});
       } else {
         setErrorMsg('Message could not be delivered.');
         setTimeout(() => setErrorMsg(''), 3000);
@@ -212,42 +246,159 @@ export default function Messages() {
   };
 
   const handleDeleteForMe = async (msgId) => {
-    const res = await fetch(`/api/messages/${msgId}/delete/${user.username}`, { method: 'POST' });
-    if (res.ok) {
+    try {
+      console.log('[DELETE_FOR_ME] Starting:', msgId);
+      const res = await fetch(`/api/messages/${msgId}/delete/${user.username}`, { method: 'POST' });
+      console.log('[DELETE_FOR_ME] Response status:', res.status);
+      
+      if (!res.ok) {
+        // Try to parse error as JSON, fall back to status text if HTML response
+        let errMsg = 'Failed to delete message';
+        try {
+          const errData = await res.json();
+          errMsg = errData.error || errMsg;
+        } catch {
+          errMsg = `${res.status} ${res.statusText}`;
+        }
+        throw new Error(errMsg);
+      }
+      
+      const data = await res.json();
+      console.log('[DELETE_FOR_ME] Success:', data);
+      
       setMessages(prev => prev.filter(m => m._id !== msgId));
       setShowMsgMenu(false);
+      setActionError('');
+      console.log('[DELETE_FOR_ME] UI updated');
+    } catch (err) {
+      console.error('[DELETE_FOR_ME] Error:', err);
+      setActionError(`Error: ${err.message || 'Failed to delete message'}`);
+      setTimeout(() => setActionError(''), 4000);
     }
   };
 
   const handleDeleteForEveryone = async (msgId) => {
-    const res = await fetch(`/api/messages/${msgId}/delete-everyone`, { method: 'POST' });
-    if (res.ok) {
+    try {
+      console.log('[DELETE_FOR_EVERYONE] Starting:', msgId);
+      const res = await fetch(`/api/messages/${msgId}/delete-everyone`, { method: 'POST' });
+      console.log('[DELETE_FOR_EVERYONE] Response status:', res.status);
+      
+      if (!res.ok) {
+        // Try to parse error as JSON, fall back to status text if HTML response
+        let errMsg = 'Failed to delete message for everyone';
+        try {
+          const errData = await res.json();
+          errMsg = errData.error || errMsg;
+        } catch {
+          errMsg = `${res.status} ${res.statusText}`;
+        }
+        throw new Error(errMsg);
+      }
+      
+      const data = await res.json();
+      console.log('[DELETE_FOR_EVERYONE] Success:', data);
+      
       setMessages(prev => prev.map(m => m._id === msgId ? { ...m, isDeleted: true, content: 'This message was deleted', image: null } : m));
       setShowMsgMenu(false);
+      setActionError('');
+      console.log('[DELETE_FOR_EVERYONE] UI updated');
+    } catch (err) {
+      console.error('[DELETE_FOR_EVERYONE] Error:', err);
+      setActionError(`Error: ${err.message || 'Failed to delete message for everyone'}`);
+      setTimeout(() => setActionError(''), 4000);
     }
   };
 
   const handleEditMessage = async (msgId) => {
-    if (!editContent.trim()) return;
-    const res = await fetch(`/api/messages/${msgId}/edit`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: editContent.trim() })
-    });
-    if (res.ok) {
+    try {
+      if (!editContent.trim()) {
+        setActionError('Message cannot be empty');
+        setTimeout(() => setActionError(''), 3000);
+        return;
+      }
+      
+      console.log('[EDIT_MESSAGE] Starting:', msgId);
+      const res = await fetch(`/api/messages/${msgId}/edit`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: editContent.trim() })
+      });
+      console.log('[EDIT_MESSAGE] Response status:', res.status);
+      
+      if (!res.ok) {
+        // Try to parse error as JSON, fall back to status text if HTML response
+        let errMsg = 'Failed to edit message';
+        try {
+          const errData = await res.json();
+          errMsg = errData.error || errMsg;
+        } catch {
+          errMsg = `${res.status} ${res.statusText}`;
+        }
+        throw new Error(errMsg);
+      }
+      
       const data = await res.json();
+      console.log('[EDIT_MESSAGE] Response data:', data);
+      
+      if (!data.data) {
+        throw new Error('Invalid response format from server');
+      }
+      
       setMessages(prev => prev.map(m => m._id === msgId ? data.data : m));
       setEditingMsg(null);
       setEditContent('');
       setShowMsgMenu(false);
+      setActionError('');
+      console.log('[EDIT_MESSAGE] UI updated');
+    } catch (err) {
+      console.error('[EDIT_MESSAGE] Error:', err);
+      setActionError(`Error: ${err.message || 'Failed to edit message'}`);
+      setTimeout(() => setActionError(''), 4000);
     }
   };
 
-  const openMsgMenu = (msg, e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const openMsgMenu = (msg, x, y) => {
+    console.log('[OPEN_MSG_MENU] Opening menu for message:', msg._id);
     setSelectedMsg(msg);
     setShowMsgMenu(true);
+    const posX = Math.min(x, window.innerWidth - 220);
+    const posY = Math.min(y, window.innerHeight - 200);
+    setMenuPos({ x: posX, y: posY });
+  };
+  
+  const handleMessageTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      console.log('[TOUCH_START] Tracking long press from:', touch.clientX, touch.clientY);
+      setTouchStart({ x: touch.clientX, y: touch.clientY, time: Date.now(), msg: null });
+    }
+  };
+  
+  const handleMessageTouchEnd = (msg, e) => {
+    if (!touchStart) return;
+    const touch = e.changedTouches[0];
+    const duration = Date.now() - touchStart.time;
+    const distance = Math.sqrt(
+      Math.pow(touch.clientX - touchStart.x, 2) + 
+      Math.pow(touch.clientY - touchStart.y, 2)
+    );
+    
+    console.log('[TOUCH_END] Duration:', duration, 'Distance:', distance);
+    
+    // Long press: 300ms+ hold, minimal movement
+    if (duration >= 300 && distance < 10) {
+      console.log('[LONG_PRESS] Triggered for message:', msg._id);
+      e.preventDefault();
+      e.stopPropagation();
+      openMsgMenu(msg, touchStart.x, touchStart.y);
+    }
+    
+    setTouchStart(null);
+  };
+  
+  const handleMessageTouchCancel = () => {
+    console.log('[TOUCH_CANCEL]');
+    setTouchStart(null);
   };
 
   const msgAge = (msg) => Date.now() - new Date(msg.timestamp).getTime();
@@ -332,8 +483,32 @@ export default function Messages() {
                     </button>
                     <div style={{ height: '1px', backgroundColor: 'var(--border-color)' }} />
                     <button onClick={async () => {
-                      const res = await fetch(`/api/conversations/${user.username}/${selectedUser}/delete`, { method: 'POST' });
-                      if (res.ok) { setShowConvOptions(false); navigate(-1); }
+                      try {
+                        console.log('[DELETE_CHAT] Starting for:', selectedUser);
+                        const res = await fetch(`/api/conversations/${user.username}/${selectedUser}/delete`, { method: 'POST' });
+                        console.log('[DELETE_CHAT] Response status:', res.status);
+                        
+                        if (!res.ok) {
+                          // Try to parse error as JSON, fall back to status text if HTML response
+                          let errMsg = 'Failed to delete conversation';
+                          try {
+                            const errData = await res.json();
+                            errMsg = errData.error || errMsg;
+                          } catch {
+                            errMsg = `${res.status} ${res.statusText}`;
+                          }
+                          throw new Error(errMsg);
+                        }
+                        
+                        const data = await res.json();
+                        console.log('[DELETE_CHAT] Success:', data);
+                        setShowConvOptions(false);
+                        navigate(-1);
+                      } catch (err) {
+                        console.error('[DELETE_CHAT] Error:', err);
+                        setActionError(`Error: ${err.message || 'Failed to delete conversation'}`);
+                        setTimeout(() => setActionError(''), 4000);
+                      }
                     }}
                       style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e74c3c', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <X size={14} /> Delete Chat
@@ -409,7 +584,10 @@ export default function Messages() {
                 const isMine = msg.sender === user.username;
                 return (
                   <div key={msg._id || i} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', marginBottom: '16px' }}
-                    onContextMenu={(e) => { if (!msg.isDeleted) openMsgMenu(msg, e); }}>
+                    onContextMenu={(e) => { if (!msg.isDeleted) { e.preventDefault(); openMsgMenu(msg, e.clientX, e.clientY); } }}
+                    onTouchStart={handleMessageTouchStart}
+                    onTouchEnd={(e) => handleMessageTouchEnd(msg, e)}
+                    onTouchCancel={handleMessageTouchCancel}>
                     <div style={{ maxWidth: '75%', display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
                       {!isMine && (
                         <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', paddingLeft: '4px' }}>
@@ -445,32 +623,36 @@ export default function Messages() {
                 );
               })
             )}
-            {/* Message context menu */}
-            {showMsgMenu && selectedMsg && (
-              <>
-                <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => { setShowMsgMenu(false); setSelectedMsg(null); }} />
-                <div style={{ position: 'absolute', bottom: '80px', right: '20px', zIndex: 91, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: '200px', overflow: 'hidden' }}>
-                  <button onClick={() => { handleDeleteForMe(selectedMsg._id); }}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Message context menu (outside scroll container) */}
+          {showMsgMenu && selectedMsg && (
+            <>
+              <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => { setShowMsgMenu(false); setSelectedMsg(null); }} />
+              <div style={{ position: 'fixed', left: `${menuPos.x}px`, top: `${menuPos.y}px`, zIndex: 91, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: '200px', overflow: 'hidden' }}>
+                <button onClick={() => { handleDeleteForMe(selectedMsg._id); }}
+                  style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e74c3c', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <X size={14} /> Delete For Me
+                </button>
+                {canDeleteEveryone(selectedMsg) && (
+                  <button onClick={() => { handleDeleteForEveryone(selectedMsg._id); }}
                     style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e74c3c', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <X size={14} /> Delete For Me
+                    <X size={14} /> Delete For Everyone
                   </button>
-                  {canDeleteEveryone(selectedMsg) && (
-                    <button onClick={() => { handleDeleteForEveryone(selectedMsg._id); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#e74c3c', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <X size={14} /> Delete For Everyone
-                    </button>
-                  )}
-                  {canEdit(selectedMsg) && (
-                    <button onClick={() => { setEditingMsg(selectedMsg._id); setEditContent(selectedMsg.content); setShowMsgMenu(false); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Edit3 size={14} /> Edit
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-            {/* Edit message modal */}
-            {editingMsg && (
+                )}
+                {canEdit(selectedMsg) && (
+                  <button onClick={() => { setEditingMsg(selectedMsg._id); setEditContent(selectedMsg.content); setShowMsgMenu(false); }}
+                    style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Edit3 size={14} /> Edit
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Edit message modal */}
+          {editingMsg && (
               <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}
                 onClick={() => { setEditingMsg(null); setEditContent(''); }}>
                 <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '24px', maxWidth: '420px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
@@ -487,8 +669,6 @@ export default function Messages() {
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
-          </div>
 
           {/* Input bar */}
           {!isBlocked && (
@@ -496,6 +676,11 @@ export default function Messages() {
             {errorMsg && (
               <div style={{ marginBottom: '8px', padding: '8px 12px', backgroundColor: 'var(--surface-alt)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
                 {errorMsg}
+              </div>
+            )}
+            {actionError && (
+              <div style={{ marginBottom: '8px', padding: '8px 12px', backgroundColor: '#fee', borderRadius: '8px', fontSize: '12px', color: '#c33', textAlign: 'center', border: '1px solid #fcc' }}>
+                {actionError}
               </div>
             )}
             {dmPreview && (
@@ -594,6 +779,7 @@ export default function Messages() {
                   const displayName = nicknames[partnerName] || partnerName;
                   const time = timeAgo(conv.lastTimestamp);
                   const isOnline = conv.lastTimestamp && (Date.now() - new Date(conv.lastTimestamp).getTime() < 300000);
+                  const statusText = isOnline ? 'Recently active' : '';
                   return (
                     <div key={partnerName} onClick={() => navigate(`/messages/${partnerName}`)}
                       style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', backgroundColor: 'var(--card-bg)', borderRadius: '14px', border: '1px solid var(--border-color)', cursor: 'pointer', transition: 'all 0.2s ease' }}
@@ -601,7 +787,7 @@ export default function Messages() {
                       onMouseLeave={e => { e.currentTarget.style.transform = ''; ; }}>
                       <div style={{ position: 'relative', flexShrink: 0 }}>
                         <Avatar username={partnerName} image={conv.partnerInfo?.profilePhoto} size={50} />
-                        {isOnline && <div style={{ position: 'absolute', bottom: '2px', right: '2px', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: 'var(--text-secondary)', border: '3px solid var(--card-bg)' }} />}
+                        {statusText && <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', fontSize: '9px', fontWeight: 600, color: 'var(--active-text)', backgroundColor: 'var(--text-color)', padding: '1px 5px', borderRadius: '8px', lineHeight: '1.4', whiteSpace: 'nowrap' }}>{statusText}</div>}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {conv.partnerInfo?.name && (

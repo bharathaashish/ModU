@@ -106,7 +106,7 @@ mongoose.connect(MONGO_URI, { bufferCommands: false })
       console.log(`Cleaned up ${oldStories.length} old story-type posts migrated to Story collection`);
     }
   } catch (e) { console.log('Story migration notice:', e.message); }
-  app.listen(PORT, () => console.log(`Backend server running on port ${PORT}`));
+  // Routes and server startup will happen after models are defined
 })
 .catch(error => {
   console.error("MongoDB connection failed:", error);
@@ -178,7 +178,7 @@ const UserSchema = new mongoose.Schema({
     partner: String,
     acceptedAt: { type: Date, default: Date.now }
   }],
-  hiddenConversations: [{ partner: String }],
+  hiddenConversations: [{ partner: String, hiddenAt: { type: Date, default: Date.now } }],
 });
 
 const PollOptionSchema = new mongoose.Schema({
@@ -1639,10 +1639,15 @@ app.get('/api/conversations/:username', async (req, res) => {
         dmMutedSet.add(m.username);
       }
     }
-    // Filter hidden conversations (deleted chats)
+    // Filter hidden conversations (deleted chats) — re-appear if new messages after hiddenAt
     const currentFullUser = await User.findOne({ username }).select('following acceptedConversations hiddenConversations').lean();
-    const hiddenSet = new Set((currentFullUser?.hiddenConversations || []).map(h => h.partner));
-    let filtered = conversations.filter(c => !blockedSet.has(c.partner) && !hiddenSet.has(c.partner));
+    const hiddenMap = new Map((currentFullUser?.hiddenConversations || []).map(h => [h.partner, h.hiddenAt]));
+    let filtered = conversations.filter(c => {
+      if (blockedSet.has(c.partner)) return false;
+      const hiddenAt = hiddenMap.get(c.partner);
+      if (!hiddenAt) return true;
+      return c.lastTimestamp && new Date(c.lastTimestamp) > new Date(hiddenAt);
+    });
     const partnerNames = filtered.map(c => c.partner);
     const partners = await User.find({ username: { $in: partnerNames } }).select('username following').lean();
     const partnerFollowMap = {};
@@ -1669,7 +1674,11 @@ app.post('/api/conversations/:username/:partner/delete', async (req, res) => {
     const { username, partner } = req.params;
     await User.updateOne(
       { username },
-      { $addToSet: { hiddenConversations: { partner } } }
+      { $pull: { hiddenConversations: { partner } } }
+    );
+    await User.updateOne(
+      { username },
+      { $addToSet: { hiddenConversations: { partner, hiddenAt: new Date() } } }
     );
     res.json({ success: true });
   } catch (err) {
@@ -3029,3 +3038,4 @@ app.delete('/api/stories/:id', async (req, res) => {
 });
 
 const PORT = 5001;
+app.listen(PORT, () => console.log(`Backend server running on port ${PORT}`));

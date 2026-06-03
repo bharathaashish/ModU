@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
@@ -8,6 +8,23 @@ function getStoredUser() {
     return storedUser ? JSON.parse(storedUser) : null;
   } catch {
     return null;
+  }
+}
+
+// Helper to store only essential user fields (avoid localStorage quota exceeded)
+function storeUserEssentials(user) {
+  try {
+    const essentialUser = {
+      username: user.username,
+      name: user.name,
+      profilePhoto: user.profilePhoto,
+      interests: user.interests,
+      isPrivate: user.isPrivate,
+      notifications: user.notifications || []
+    };
+    localStorage.setItem('currentUser', JSON.stringify(essentialUser));
+  } catch (err) {
+    console.error('Failed to store user:', err);
   }
 }
 
@@ -30,7 +47,7 @@ export function AuthProvider({ children }) {
       if (!res.ok) return { success: false, message: data.message || 'Invalid username or password' };
       
       setUser(data);
-      localStorage.setItem('currentUser', JSON.stringify(data));
+      storeUserEssentials(data);
       return { success: true };
     } catch {
       return { success: false, message: 'Server connection error' };
@@ -48,7 +65,7 @@ export function AuthProvider({ children }) {
       if (!res.ok) return { success: false, message: data.message || 'Username already exists' };
       
       setUser(data);
-      localStorage.setItem('currentUser', JSON.stringify(data));
+      storeUserEssentials(data);
       return { success: true };
     } catch {
       return { success: false, message: 'Server connection error' };
@@ -57,7 +74,7 @@ export function AuthProvider({ children }) {
 
   const loginWithGoogle = (googleUser) => {
     setUser(googleUser);
-    localStorage.setItem('currentUser', JSON.stringify(googleUser));
+    storeUserEssentials(googleUser);
     return { success: true };
   };
 
@@ -77,7 +94,7 @@ export function AuthProvider({ children }) {
       if (res.ok) {
         const updatedUser = await res.json();
         setUser(updatedUser);
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        storeUserEssentials(updatedUser);
       }
     } catch (err) {
       console.error('Error saving settings', err);
@@ -97,7 +114,7 @@ export function AuthProvider({ children }) {
       if (!res.ok) return { success: false, message: data.message || 'Error updating profile' };
       
       setUser(data);
-      localStorage.setItem('currentUser', JSON.stringify(data));
+      storeUserEssentials(data);
       return { success: true };
     } catch {
       return { success: false, message: 'Server connection error' };
@@ -112,12 +129,18 @@ export function AuthProvider({ children }) {
         const notifications = await res.json();
         const updatedUser = { ...user, notifications };
         setUser(updatedUser);
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        storeUserEssentials(updatedUser);
       }
     } catch (err) {
       console.error('Failed to refresh notifications:', err);
     }
   };
+
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(refreshNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, setUser, updateUser, login, register, loginWithGoogle, logout, updateUserSettings, updateUserProfile, refreshNotifications }}>

@@ -13,7 +13,6 @@ import SharedInterestPosts from './pages/SharedInterestPosts'
 import DiscussionThread from './pages/DiscussionThread'
 import Discussions from './pages/Discussions'
 import Hubs from './pages/Hubs'
-import Community from './pages/Community'
 import CommunityServer from './pages/CommunityServer'
 import CreateCommunity from './pages/CreateCommunity'
 import Communities from './pages/Communities'
@@ -67,8 +66,8 @@ function AppROUTES() {
         <Route path="/discussion/:id" element={<DiscussionThread />} />
         <Route path="/discussions" element={<Discussions />} />
         <Route path="/hubs" element={<Hubs />} />
-        <Route path="/community/:communityId" element={<CommunityServer />} />
         <Route path="/community/create" element={<CreateCommunity />} />
+        <Route path="/community/:communityId" element={<CommunityServer />} />
         <Route path="/communities" element={<Communities />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:username" element={<Profile />} />
@@ -100,10 +99,14 @@ function App() {
     ['modu_users', 'modu_posts', 'modu_stories'].forEach(k => localStorage.removeItem(k));
     
     // Task 3: Theme persistence
-    const savedTheme = localStorage.getItem('modu_theme') || 'dark';
-    const normalizedTheme = savedTheme === 'light' ? 'light' : 'dark';
-    localStorage.setItem('modu_theme', normalizedTheme);
-    document.documentElement.setAttribute('data-theme', normalizedTheme);
+    const savedTheme = localStorage.getItem('modu_theme') || 'system';
+    let appliedTheme = savedTheme;
+    if (savedTheme === 'system') {
+      appliedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } else if (savedTheme !== 'light' && savedTheme !== 'dark') {
+      appliedTheme = 'dark';
+    }
+    document.documentElement.setAttribute('data-theme', appliedTheme);
 
     // Task 4: Font size persistence
     const savedFont = localStorage.getItem('modu_font_size') || 'normal';
