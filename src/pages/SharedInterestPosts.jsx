@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Heart, MessageCircle, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Heart, MessageCircle, Image as ImageIcon, Search, X, ChevronDown } from 'lucide-react';
 import Avatar from '../components/Avatar';
 
 const INTEREST_KEYWORDS = [
@@ -100,7 +100,13 @@ export default function SharedInterestPosts() {
   const navigate = useNavigate();
 
   const [posts, setPosts] = useState([]);
+  const [allPosts, setAllPosts] = useState([]);
+  const [allCommunities, setAllCommunities] = useState([]);
+  const [joinedCommunities, setJoinedCommunities] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortMode, setSortMode] = useState('trending');
 
   useEffect(() => {
     async function load() {
@@ -111,23 +117,27 @@ export default function SharedInterestPosts() {
         fetch(`/api/users?currentUsername=${user?.username || ''}`)
       ]);
 
-      const allPosts = postsRes.ok ? await postsRes.json() : [];
-      const allCommunities = commRes.ok ? await commRes.json() : [];
-      const joinedCommunities = joinedRes.ok ? await joinedRes.json() : [];
+      const fetchedPosts = postsRes.ok ? await postsRes.json() : [];
+      const fetchedCommunities = commRes.ok ? await commRes.json() : [];
+      const fetchedJoined = joinedRes.ok ? await joinedRes.json() : [];
       const allUsersDict = usersRes.ok ? await usersRes.json() : {};
-      const allUsers = Object.values(allUsersDict);
+      const fetchedUsers = Object.values(allUsersDict);
+
+      setAllPosts(fetchedPosts);
+      setAllCommunities(fetchedCommunities);
+      setJoinedCommunities(fetchedJoined);
+      setAllUsers(fetchedUsers);
 
       const myInterests = user?.interests || [];
 
-      const scored = allPosts
+      const scored = fetchedPosts
         .filter(p => p.type !== 'discussion' && p.type !== 'story' && p.username !== user?.username)
-        .map(p => ({ ...p, _score: scoreDiscoverPost(p, myInterests, joinedCommunities, allCommunities, allUsers) }))
-        .filter(p => p._score > 0 || (p.tags?.length > 0)) // show tagged posts even with low relevance
+        .map(p => ({ ...p, _score: scoreDiscoverPost(p, myInterests, fetchedJoined, fetchedCommunities, fetchedUsers) }))
+        .filter(p => p._score > 0 || (p.tags?.length > 0))
         .sort((a, b) => {
-          // 80% from scoring, 20% controlled randomness for discovery diversity
           const scoreDiff = b._score - a._score;
           if (Math.abs(scoreDiff) > 5) return scoreDiff;
-          return Math.random() - 0.5; // shuffle within similar scores
+          return Math.random() - 0.5;
         });
 
       setPosts(scored);
@@ -135,6 +145,50 @@ export default function SharedInterestPosts() {
     }
     load();
   }, [user]);
+
+  const sortPosts = (list) => {
+    const now = Date.now();
+    const sorted = [...list];
+    if (sortMode === 'recent') {
+      sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (sortMode === 'popular') {
+      sorted.sort((a, b) => ((b.likes || 0) + (b.comments || 0)) - ((a.likes || 0) + (a.comments || 0)));
+    } else {
+      sorted.sort((a, b) => {
+        const engagementA = (a.likes || 0) + (a.comments || 0) + 1;
+        const hoursAgeA = (now - new Date(a.createdAt).getTime()) / 3600000;
+        const scoreA = engagementA / Math.pow((hoursAgeA + 2), 1.5);
+        const engagementB = (b.likes || 0) + (b.comments || 0) + 1;
+        const hoursAgeB = (now - new Date(b.createdAt).getTime()) / 3600000;
+        const scoreB = engagementB / Math.pow((hoursAgeB + 2), 1.5);
+        return scoreB - scoreA;
+      });
+    }
+    return sorted;
+  };
+
+  const filteredPosts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return sortPosts(posts);
+
+    const scored = allPosts
+      .filter(p => p.type !== 'discussion' && p.type !== 'story')
+      .map(p => {
+        const title = (p.title || '').toLowerCase();
+        const content = (p.content || '').toLowerCase();
+        const tags = (p.tags || []).join(' ').toLowerCase();
+        let score = 0;
+
+        if (title.includes(q)) score += 10;
+        if (tags.includes(q)) score += 5;
+        if (content.includes(q)) score += 2;
+
+        return { ...p, _searchScore: score };
+      })
+      .filter(p => p._searchScore > 0);
+
+    return sortPosts(scored);
+  }, [posts, allPosts, searchQuery, sortMode]);
 
   if (loading) {
     return (
@@ -163,15 +217,61 @@ export default function SharedInterestPosts() {
         </p>
       </div>
 
-      {posts.length === 0 ? (
+      {/* Search bar */}
+      <div className="discussion-search-bar" style={{ margin: '0 0 16px' }}>
+        <Search size={16} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+        <input
+          type="search"
+          placeholder="Search posts, tags, users..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px', display: 'flex', flexShrink: 0 }}>
+            <X size={16} />
+          </button>
+        )}
+      </div>
+
+      {/* Sort dropdown */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '0 0 12px' }}>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <select
+            value={sortMode}
+            onChange={e => setSortMode(e.target.value)}
+            style={{
+              padding: '6px 28px 6px 12px',
+              fontSize: '13px',
+              fontWeight: 600,
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)',
+              backgroundColor: 'var(--card-bg)',
+              color: 'var(--text-color)',
+              cursor: 'pointer',
+              outline: 'none',
+              appearance: 'none',
+              WebkitAppearance: 'none',
+              MozAppearance: 'none',
+              fontFamily: 'var(--font-sans)'
+            }}
+          >
+            <option value="trending">Trending</option>
+            <option value="popular">Popular</option>
+            <option value="recent">Recent</option>
+          </select>
+          <ChevronDown size={14} color="var(--text-secondary)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        </div>
+      </div>
+
+      {filteredPosts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-secondary)' }}>
           <MessageSquare size={40} style={{ margin: '0 auto 16px', display: 'block', opacity: 0.3 }} />
-          <div style={{ fontSize: '16px', fontWeight: 500, marginBottom: '6px' }}>No posts to discover yet</div>
-          <div style={{ fontSize: '14px' }}>Set more interests or follow communities to find relevant content</div>
+          <div style={{ fontSize: '16px', fontWeight: 500, marginBottom: '6px' }}>{searchQuery.trim() ? 'No posts found' : 'No posts to discover yet'}</div>
+          <div style={{ fontSize: '14px' }}>{searchQuery.trim() ? 'Try a broader search term or clear the filter.' : 'Set more interests or follow communities to find relevant content'}</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {posts.map(post => (
+          {filteredPosts.map(post => (
             <div
               key={post._id}
               className="flat-card"
