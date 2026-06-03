@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import PostViewer from '../components/PostViewer';
 import { ArrowLeft } from 'lucide-react';
 
 export default function PostPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [post, setPost] = useState(null);
 
   useEffect(() => {
     if (id) {
-      fetch(`/api/posts/${id}`)
+      fetch(`/api/posts/${id}?username=${user?.username || ''}`)
         .then(res => res.ok ? res.json() : null)
         .then(data => setPost(data))
         .catch(() => {});
     }
-  }, [id]);
+  }, [id, user]);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)' }}>

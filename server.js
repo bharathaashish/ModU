@@ -181,6 +181,21 @@ const UserSchema = new mongoose.Schema({
   hiddenConversations: [{ partner: String, hiddenAt: { type: Date, default: Date.now } }],
 });
 
+// ── Visibility helper functions ──
+function canViewPhoto(user, viewerUsername) {
+  if (!viewerUsername || !user) return false;
+  if (user.username === viewerUsername) return true;
+  if ((user.photoVisibility || 'everyone') !== 'followers') return true;
+  return (user.followers || []).includes(viewerUsername);
+}
+
+function canViewInterests(user, viewerUsername) {
+  if (!viewerUsername || !user) return false;
+  if (user.username === viewerUsername) return true;
+  if ((user.interestVisibility || 'everyone') !== 'followers') return true;
+  return (user.followers || []).includes(viewerUsername);
+}
+
 const PollOptionSchema = new mongoose.Schema({
   text: { type: String, required: true },
   votes: { type: Number, default: 0 },
@@ -729,6 +744,9 @@ app.get('/api/users', async (req, res) => {
       const userObj = u.toObject();
       delete userObj.followRequests;
       userObj.hasPendingRequest = hasPendingRequest;
+      // Apply visibility filters
+      if (!canViewPhoto(u, currentUsername)) userObj.profilePhoto = '';
+      if (!canViewInterests(u, currentUsername)) userObj.interests = [];
       usersDict[u.username] = userObj;
     }
     res.json(usersDict);
@@ -768,7 +786,10 @@ app.get('/api/users/search', async (req, res) => {
       const hasPending = currentUsername
         ? userDoc?.followRequests?.some(r => r.fromUsername === currentUsername)
         : false;
-      return { ...u.toObject(), hasPendingRequest: !!hasPending };
+      const obj = { ...u.toObject(), hasPendingRequest: !!hasPending };
+      if (!canViewPhoto(u, currentUsername)) obj.profilePhoto = '';
+      if (!canViewInterests(u, currentUsername)) obj.interests = [];
+      return obj;
     }));
     res.json(enriched);
   } catch (err) {
@@ -890,6 +911,12 @@ app.put('/api/users/:username', async (req, res) => {
     if (isPrivate !== undefined) updateFields.isPrivate = isPrivate;
     if (req.body.photoVisibility !== undefined) updateFields.photoVisibility = req.body.photoVisibility;
     if (req.body.interestVisibility !== undefined) updateFields.interestVisibility = req.body.interestVisibility;
+
+    // Auto-set visibility to followers when switching to private (unless explicitly provided)
+    if (isPrivate === true) {
+      if (req.body.photoVisibility === undefined) updateFields.photoVisibility = 'followers';
+      if (req.body.interestVisibility === undefined) updateFields.interestVisibility = 'followers';
+    }
 
     console.log(`[UPDATE] fields to set:`, JSON.stringify(updateFields));
 
@@ -1334,8 +1361,14 @@ app.post('/api/users/:username/close-friends/add', async (req, res) => {
     const updated = await User.findOne({ username: req.params.username }).select('closeFriends').lean();
     // Return enriched close friend info
     const closeFriends = updated?.closeFriends || [];
-    const users = await User.find({ username: { $in: closeFriends } }).select('username name profilePhoto').lean();
-    res.json(users);
+    const users = await User.find({ username: { $in: closeFriends } }).select('username name profilePhoto photoVisibility followers').lean();
+    const viewer = req.params.username;
+    const enriched = users.map(u => {
+      const obj = { ...u };
+      if (!canViewPhoto(u, viewer)) obj.profilePhoto = '';
+      return obj;
+    });
+    res.json(enriched);
   } catch (err) {
     console.error('Close friends add error:', err);
     res.status(500).json({ error: err.message });
@@ -1352,8 +1385,14 @@ app.post('/api/users/:username/close-friends/remove', async (req, res) => {
     );
     const updated = await User.findOne({ username: req.params.username }).select('closeFriends').lean();
     const closeFriends = updated?.closeFriends || [];
-    const users = await User.find({ username: { $in: closeFriends } }).select('username name profilePhoto').lean();
-    res.json(users);
+    const users = await User.find({ username: { $in: closeFriends } }).select('username name profilePhoto photoVisibility followers').lean();
+    const viewer = req.params.username;
+    const enriched = users.map(u => {
+      const obj = { ...u };
+      if (!canViewPhoto(u, viewer)) obj.profilePhoto = '';
+      return obj;
+    });
+    res.json(enriched);
   } catch (err) {
     console.error('Close friends remove error:', err);
     res.status(500).json({ error: err.message });
@@ -1364,8 +1403,14 @@ app.get('/api/users/:username/close-friends', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username }).select('closeFriends').lean();
     const closeFriends = user?.closeFriends || [];
-    const users = await User.find({ username: { $in: closeFriends } }).select('username name profilePhoto').lean();
-    res.json(users);
+    const users = await User.find({ username: { $in: closeFriends } }).select('username name profilePhoto photoVisibility followers').lean();
+    const viewer = req.params.username;
+    const enriched = users.map(u => {
+      const obj = { ...u };
+      if (!canViewPhoto(u, viewer)) obj.profilePhoto = '';
+      return obj;
+    });
+    res.json(enriched);
   } catch (err) {
     console.error('Close friends list error:', err);
     res.status(500).json({ error: err.message });
@@ -1609,7 +1654,7 @@ app.get('/api/conversations/:username', async (req, res) => {
           let: { partner: '$_id.partner' },
           pipeline: [
             { $match: { $expr: { $eq: ['$username', '$$partner'] } } },
-            { $project: { username: 1, name: 1, bio: 1, profilePhoto: 1 } }
+            { $project: { username: 1, name: 1, bio: 1, profilePhoto: 1, photoVisibility: 1, followers: 1 } }
           ],
           as: 'partnerInfo'
         }
@@ -1659,6 +1704,13 @@ app.get('/api/conversations/:username', async (req, res) => {
       const viewerAccepted = (currentFullUser?.acceptedConversations || []).some(a => a.partner === c.partner);
       const needsAcceptance = !viewFollows && !partnerFollows && !viewerAccepted;
       return { ...c, dmMuted: dmMutedSet.has(c.partner), needsAcceptance };
+    });
+    // Apply photo visibility to conversation partner avatars
+    filtered = filtered.map(c => {
+      if (c.partnerInfo && !canViewPhoto(c.partnerInfo, username)) {
+        c.partnerInfo.profilePhoto = '';
+      }
+      return c;
     });
     res.json(filtered);
   } catch (err) {
@@ -1788,12 +1840,16 @@ app.get('/api/posts', async (req, res) => {
       }
     }
 
-    // Attach profilePhoto to each content item
+    // Attach profilePhoto to each content item (respecting photo visibility)
     const allUsernames = [...new Set(allContent.map(p => p.username))];
-    const userPhotos = await User.find({ username: { $in: allUsernames } }).select('username profilePhoto').lean();
+    const userPhotos = await User.find({ username: { $in: allUsernames } }).select('username profilePhoto photoVisibility followers').lean();
     const photoMap = {};
     for (const u of userPhotos) {
-      photoMap[u.username] = u.profilePhoto || '';
+      if (canViewPhoto(u, currentUsername)) {
+        photoMap[u.username] = u.profilePhoto || '';
+      } else {
+        photoMap[u.username] = '';
+      }
     }
     allContent = allContent.map(p => ({ ...p, profilePhoto: photoMap[p.username] || '' }));
     res.json(allContent);
@@ -1889,12 +1945,16 @@ app.get('/api/posts/discussions', async (req, res) => {
         discussions = discussions.filter(d => !hidden.has(d.username));
       }
     }
-    // Attach profilePhoto
+    // Attach profilePhoto (respecting photo visibility)
     const discUsernames = [...new Set(discussions.map(d => d.username))];
-    const discUsers = await User.find({ username: { $in: discUsernames } }).select('username profilePhoto').lean();
+    const discUsers = await User.find({ username: { $in: discUsernames } }).select('username profilePhoto photoVisibility followers').lean();
     const discPhotoMap = {};
     for (const u of discUsers) {
-      discPhotoMap[u.username] = u.profilePhoto || '';
+      if (canViewPhoto(u, currentUsername)) {
+        discPhotoMap[u.username] = u.profilePhoto || '';
+      } else {
+        discPhotoMap[u.username] = '';
+      }
     }
     discussions = discussions.map(d => ({ ...d, profilePhoto: discPhotoMap[d.username] || '' }));
     res.json(discussions);
@@ -1909,9 +1969,14 @@ app.get('/api/posts/:id', async (req, res) => {
   try {
     let post = await Post.findById(req.params.id).lean();
     if (!post) return res.status(404).json({ error: 'Post not found' });
-    // Attach profilePhoto
-    const postUser = await User.findOne({ username: post.username }).select('profilePhoto').lean();
-    post.profilePhoto = postUser?.profilePhoto || '';
+    // Attach profilePhoto (respecting photo visibility)
+    const { username: viewerUsername } = req.query;
+    const postUser = await User.findOne({ username: post.username }).select('profilePhoto photoVisibility followers').lean();
+    if (postUser && canViewPhoto(postUser, viewerUsername)) {
+      post.profilePhoto = postUser.profilePhoto || '';
+    } else {
+      post.profilePhoto = '';
+    }
     res.json(post);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1924,12 +1989,16 @@ app.get('/api/posts/community/:communityId', async (req, res) => {
     let posts = await Post.find({ communityId: req.params.communityId })
       .sort({ createdAt: -1 })
       .lean();
-    // Attach profilePhoto
+    // Attach profilePhoto (respecting photo visibility)
     const commUsernames = [...new Set(posts.map(p => p.username))];
-    const commUsers = await User.find({ username: { $in: commUsernames } }).select('username profilePhoto').lean();
+    const commUsers = await User.find({ username: { $in: commUsernames } }).select('username profilePhoto photoVisibility followers').lean();
     const commPhotoMap = {};
     for (const u of commUsers) {
-      commPhotoMap[u.username] = u.profilePhoto || '';
+      if (canViewPhoto(u, req.query.currentUsername)) {
+        commPhotoMap[u.username] = u.profilePhoto || '';
+      } else {
+        commPhotoMap[u.username] = '';
+      }
     }
     posts = posts.map(p => ({ ...p, profilePhoto: commPhotoMap[p.username] || '' }));
     res.json(posts);
@@ -2000,12 +2069,17 @@ app.get('/api/posts/:id/comments', async (req, res) => {
       comments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     
-    // Attach profilePhoto to each comment
+    // Attach profilePhoto to each comment (respecting photo visibility)
     const commentUsernames = [...new Set(comments.map(c => c.username))];
-    const commentUsers = await User.find({ username: { $in: commentUsernames } }).select('username profilePhoto').lean();
+    const { currentUsername } = req.query;
+    const commentUsers = await User.find({ username: { $in: commentUsernames } }).select('username profilePhoto photoVisibility followers').lean();
     const commentPhotoMap = {};
     for (const u of commentUsers) {
-      commentPhotoMap[u.username] = u.profilePhoto || '';
+      if (canViewPhoto(u, currentUsername)) {
+        commentPhotoMap[u.username] = u.profilePhoto || '';
+      } else {
+        commentPhotoMap[u.username] = '';
+      }
     }
     comments = comments.map(c => ({ ...c, profilePhoto: commentPhotoMap[c.username] || '' }));
     res.json(comments);
@@ -2019,9 +2093,11 @@ app.get('/api/posts/:id/comments', async (req, res) => {
 app.get('/api/comments/user/:username', async (req, res) => {
   try {
     let comments = await Comment.find({ username: req.params.username }).sort({ createdAt: -1 }).lean();
-    // Attach profilePhoto
-    const commentUsers = await User.find({ username: req.params.username }).select('profilePhoto').lean();
-    const photo = commentUsers[0]?.profilePhoto || '';
+    // Attach profilePhoto (respecting photo visibility)
+    const { currentUsername } = req.query;
+    const commentUsers = await User.find({ username: req.params.username }).select('profilePhoto photoVisibility followers').lean();
+    const userDoc = commentUsers[0];
+    const photo = (userDoc && canViewPhoto(userDoc, currentUsername)) ? (userDoc.profilePhoto || '') : '';
     comments = comments.map(c => ({ ...c, profilePhoto: photo }));
     res.json(comments);
   } catch (err) {
@@ -2419,12 +2495,16 @@ app.get('/api/users/:username/saved', async (req, res) => {
     let savedPosts = await Post.find({ _id: { $in: user.savedPosts } })
       .sort({ createdAt: -1 })
       .lean();
-    // Attach profilePhoto
+    // Attach profilePhoto (respecting photo visibility)
     const savedUsernames = [...new Set(savedPosts.map(p => p.username))];
-    const savedUsers = await User.find({ username: { $in: savedUsernames } }).select('username profilePhoto').lean();
+    const savedUsers = await User.find({ username: { $in: savedUsernames } }).select('username profilePhoto photoVisibility followers').lean();
     const savedPhotoMap = {};
     for (const u of savedUsers) {
-      savedPhotoMap[u.username] = u.profilePhoto || '';
+      if (canViewPhoto(u, req.params.username)) {
+        savedPhotoMap[u.username] = u.profilePhoto || '';
+      } else {
+        savedPhotoMap[u.username] = '';
+      }
     }
     savedPosts = savedPosts.map(p => ({ ...p, profilePhoto: savedPhotoMap[p.username] || '' }));
     res.json(savedPosts);
@@ -2447,12 +2527,16 @@ app.get('/api/users/:username/notifications', async (req, res) => {
     if (blockedSet.size > 0) {
       notifications = notifications.filter(n => !blockedSet.has(n.fromUser));
     }
-    // Attach profilePhoto to each notification
+    // Attach profilePhoto to each notification (respecting photo visibility)
     const notifUsernames = [...new Set(notifications.map(n => n.fromUser).filter(Boolean))];
-    const notifUsers = await User.find({ username: { $in: notifUsernames } }).select('username profilePhoto').lean();
+    const notifUsers = await User.find({ username: { $in: notifUsernames } }).select('username profilePhoto photoVisibility followers').lean();
     const notifPhotoMap = {};
     for (const u of notifUsers) {
-      notifPhotoMap[u.username] = u.profilePhoto || '';
+      if (canViewPhoto(u, req.params.username)) {
+        notifPhotoMap[u.username] = u.profilePhoto || '';
+      } else {
+        notifPhotoMap[u.username] = '';
+      }
     }
     notifications = notifications.map(n => ({ ...n, profilePhoto: notifPhotoMap[n.fromUser] || '' }));
     res.json(notifications);
@@ -2848,12 +2932,16 @@ app.get('/api/channel-messages/:communityId/:channelName', async (req, res) => {
       .sort({ createdAt: 1 })
       .limit(100)
       .lean();
-    // Attach profilePhoto
+    // Attach profilePhoto (respecting photo visibility)
     const cmUsernames = [...new Set(messages.map(m => m.senderUsername))];
-    const cmUsers = await User.find({ username: { $in: cmUsernames } }).select('username profilePhoto').lean();
+    const cmUsers = await User.find({ username: { $in: cmUsernames } }).select('username profilePhoto photoVisibility followers').lean();
     const cmPhotoMap = {};
     for (const u of cmUsers) {
-      cmPhotoMap[u.username] = u.profilePhoto || '';
+      if (canViewPhoto(u, req.query.currentUsername)) {
+        cmPhotoMap[u.username] = u.profilePhoto || '';
+      } else {
+        cmPhotoMap[u.username] = '';
+      }
     }
     messages = messages.map(m => ({ ...m, profilePhoto: cmPhotoMap[m.senderUsername] || '' }));
     res.json(messages);
@@ -2917,11 +3005,17 @@ app.get('/api/stories', async (req, res) => {
         stories = stories.filter(s => !blockedSet.has(s.author));
       }
     }
-    // Enrich with author profile photos
+    // Enrich with author profile photos (respecting photo visibility)
     const authors = [...new Set(stories.map(s => s.author))];
-    const authorUsers = await User.find({ username: { $in: authors } }).select('username profilePhoto').lean();
+    const authorUsers = await User.find({ username: { $in: authors } }).select('username profilePhoto photoVisibility followers').lean();
     const photoMap = {};
-    for (const u of authorUsers) photoMap[u.username] = u.profilePhoto || '';
+    for (const u of authorUsers) {
+      if (canViewPhoto(u, currentUsername)) {
+        photoMap[u.username] = u.profilePhoto || '';
+      } else {
+        photoMap[u.username] = '';
+      }
+    }
     stories = stories.map(s => ({ ...s, profilePhoto: photoMap[s.author] || '' }));
 
     res.json(stories);
@@ -2980,9 +3074,10 @@ app.get('/api/stories/user/:username', async (req, res) => {
       }
     }
 
-    // Enrich with author profile photo
-    const authorUser = await User.findOne({ username: targetUsername }).select('profilePhoto').lean();
-    stories = stories.map(s => ({ ...s, profilePhoto: authorUser?.profilePhoto || '' }));
+    // Enrich with author profile photo (respecting photo visibility)
+    const authorUser = await User.findOne({ username: targetUsername }).select('profilePhoto photoVisibility followers').lean();
+    const authorPhoto = (authorUser && canViewPhoto(authorUser, currentUsername)) ? (authorUser.profilePhoto || '') : '';
+    stories = stories.map(s => ({ ...s, profilePhoto: authorPhoto }));
 
     res.json(stories);
   } catch (err) {

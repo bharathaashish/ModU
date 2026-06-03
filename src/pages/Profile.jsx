@@ -459,7 +459,7 @@ export default function Profile() {
           )}
 
           {/* Interests */}
-          {canViewContent && profileUser?.interests && profileUser.interests.length > 0 && (
+          {profileUser?.interests && profileUser.interests.length > 0 && (
             <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '10px' }}>Interests</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>

@@ -283,12 +283,14 @@ export default function Home() {
       <>
       <div className="feed-item">
         <div className="feed-header" style={{ justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => navigate(`/profile/${post.username}`)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={() => navigate(`/profile/${post.username}`)}>
             <Avatar username={post.username} image={post.profilePhoto} size={32} />
-            <span style={{ fontWeight: 600, fontSize: '14px' }}>{post.username}</span>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '14px', lineHeight: 1.3 }}>{post.username}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{timeAgo(post.createdAt)}</div>
+            </div>
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{timeAgo(post.createdAt)}</div>
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
             <button
               onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
               style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}

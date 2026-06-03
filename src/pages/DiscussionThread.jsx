@@ -228,7 +228,7 @@ export default function DiscussionThread() {
   useEffect(() => {
     async function load() {
       const [postRes, commentsRes] = await Promise.all([
-        fetch(`/api/posts/${id}`),
+        fetch(`/api/posts/${id}?username=${user?.username || ''}`),
         fetch(`/api/posts/${id}/comments`)
       ]);
       if (postRes.ok) setPost(await postRes.json());

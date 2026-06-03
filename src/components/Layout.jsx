@@ -37,9 +37,6 @@ export default function Layout() {
                 </span>
               )}
             </button>
-<button onClick={() => navigate('/messages')} style={{ background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: 0 }}>
-              <MessageCircle size={24} />
-            </button>
           </div>
         </div>
       );

@@ -235,21 +235,21 @@ export default function PostViewer({ post, onClose, onLikeUpdate, onPostUpdate }
           display: 'flex', alignItems: 'center', gap: '12px',
           borderBottom: '1px solid var(--border-color)'
         }}>
-          {/* Left: avatar + username — clickable to profile */}
+          {/* Left: avatar + username + timestamp — clickable to profile */}
           <div
             style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flex: 1, minWidth: 0 }}
             onClick={() => navigate(`/profile/${post.username}`)}
           >
             <Avatar username={post?.username} image={post?.profilePhoto} size={36} />
-            <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-color)', whiteSpace: 'nowrap' }}>
-              {post.username}
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-color)', lineHeight: 1.3 }}>
+                {post.username}
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {timeAgo(post.createdAt)}
+              </span>
+            </div>
           </div>
-
-          {/* Center: timestamp — pushed away from username, before action buttons */}
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {timeAgo(post.createdAt)}
-          </span>
 
           {/* Right: Follow button OR ··· menu */}
           {post.username !== user?.username ? (

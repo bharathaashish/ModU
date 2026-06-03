@@ -19,7 +19,6 @@ export default function EditProfile() {
   const [age, setAge] = useState(() => user?.age || '');
   const [phone, setPhone] = useState(() => user?.phone || '');
   const [bio, setBio] = useState(() => user?.bio || '');
-  const [photoVisibility, setPhotoVisibility] = useState(() => user?.photoVisibility || 'everyone');
   const [error, setError] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -148,7 +147,7 @@ export default function EditProfile() {
     setSaving(true);
     setSaved(false);
 
-    const result = await updateUserProfile({ username, name, email, age, phone, bio, photoVisibility });
+    const result = await updateUserProfile({ username, name, email, age, phone, bio });
     setSaving(false);
 
     if (!result.success) {
@@ -256,28 +255,6 @@ export default function EditProfile() {
           <div style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '10px' }}>Bio</div>
           <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Write a little about yourself..."
             style={{ width: '100%', padding: '10px 12px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '14px', outline: 'none', resize: 'vertical', lineHeight: '1.6', fontFamily: 'var(--font-sans)', transition: 'border-color 0.15s' }} />
-        </div>
-
-        {/* Photo Visibility card */}
-        <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '20px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '14px' }}>Profile Photo Visibility</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[
-                  { value: 'everyone', label: 'Everyone', desc: 'Anyone can see your profile photo' },
-                  { value: 'followers', label: 'Followers Only', desc: 'Only your followers can see your profile photo' },
-                ].map(opt => (
-              <label key={opt.value} onClick={() => setPhotoVisibility(opt.value)}
-                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', backgroundColor: photoVisibility === opt.value ? 'var(--surface-alt)' : 'transparent', transition: 'background-color 0.15s' }}>
-                <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: `2px solid ${photoVisibility === opt.value ? 'var(--text-color)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {photoVisibility === opt.value && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: "var(--active-color)" }} />}
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-color)' }}>{opt.label}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '1px' }}>{opt.desc}</div>
-                </div>
-              </label>
-            ))}
-          </div>
         </div>
 
         {/* Save button */}
