@@ -744,6 +744,26 @@ h2 { font-size: var(--fs-lg); font-weight: 500; }
   font-family: var(--font-sans);
 }
 
+/* Hide browser-native search clear button */
+.discussion-search-bar input::-webkit-search-decoration,
+.discussion-search-bar input::-webkit-search-cancel-button,
+.discussion-search-bar input::-webkit-search-results-button,
+.discussion-search-bar input::-webkit-search-results-decoration {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.discussion-search-bar input[type="search"]::-moz-search-clear-button {
+  display: none;
+}
+
+.discussion-search-bar input[type="search"]::-ms-clear,
+.discussion-search-bar input[type="search"]::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .discussion-card {
   cursor: pointer;
 }

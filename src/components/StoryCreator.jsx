@@ -172,7 +172,7 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
               <button onClick={() => setShowAudiencePicker(!showAudiencePicker)}
                 style={{
                   padding: '6px 12px', fontSize: '12px', fontWeight: 600, borderRadius: '8px',
-                  border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.15)',
                   color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
                   transition: 'all 0.2s'
                 }}>
@@ -184,15 +184,15 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
                   <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setShowAudiencePicker(false)} />
                   <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, marginTop: '4px', backgroundColor: 'var(--card-bg)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', overflow: 'hidden', minWidth: '160px' }}>
                     <button onClick={() => { setAudience('public'); setShowAudiencePicker(false); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'public' ? 'var(--text-color)' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Globe size={14} /> Public
                     </button>
                     <button onClick={() => { setAudience('followers'); setShowAudiencePicker(false); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'followers' ? 'var(--text-color)' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Users size={14} /> Followers
                     </button>
                     <button onClick={() => { setAudience('close_friends'); setShowAudiencePicker(false); }}
-                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: audience === 'close_friends' ? 'var(--text-color)' : '#fff', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Lock size={14} /> Close Friends
                     </button>
                   </div>
@@ -205,8 +205,9 @@ export default function StoryCreator({ isOpen, onClose, onPostSuccess }) {
             disabled={!media || loading}
             style={{
               padding: '8px 20px',
-              backgroundColor: loading || !media ? 'rgba(255,255,255,0.2)' : 'var(--text-color)',
-              border: 'none', borderRadius: '8px', color: '#fff',
+              backgroundColor: loading || !media ? 'rgba(255,255,255,0.1)' : '#fff',
+              border: 'none', borderRadius: '8px',
+              color: loading || !media ? 'rgba(255,255,255,0.4)' : '#000',
               fontWeight: 600, fontSize: '14px',
               cursor: loading || !media ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', gap: '6px',
