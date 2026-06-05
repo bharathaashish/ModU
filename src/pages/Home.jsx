@@ -9,6 +9,24 @@ import StoryViewer from '../components/StoryViewer';
 import PostViewer from '../components/PostViewer';
 import ConfirmModal from '../components/ConfirmModal';
 
+const VIEWED_POSTS_KEY = 'modu_viewed_posts';
+
+const getViewedPosts = (username) => {
+  if (!username) return {};
+  try {
+    const raw = localStorage.getItem(`${VIEWED_POSTS_KEY}_${username}`);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+};
+
+const markPostAsViewed = (postId, username) => {
+  if (!username || !postId) return;
+  const key = `${VIEWED_POSTS_KEY}_${username}`;
+  const current = getViewedPosts(username);
+  current[postId] = Date.now();
+  try { localStorage.setItem(key, JSON.stringify(current)); } catch {}
+};
+
 const timeAgo = (date) => {
   const diff = Date.now() - new Date(date).getTime();
   const mins = Math.floor(diff / 60000);
@@ -166,11 +184,26 @@ export default function Home() {
           };
 
           let activePosts;
+          const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
           if (feedFilter === 'Friends') {
-            // All following first; at most 5% suggested sprinkled at the end
-            const sprinkleCount = Math.max(1, Math.ceil(rankedSuggested.length * 0.05));
-            const sprinkle = rankedSuggested.slice(0, Math.min(sprinkleCount, rankedSuggested.length));
-            activePosts = [...followingPosts, ...sprinkle];
+            const viewedPostsMap = getViewedPosts(username);
+            const now = Date.now();
+            // Only followed users' posts, no injected content
+            const friendPosts = followingPosts.filter(post => {
+              const viewedTime = viewedPostsMap[post._id];
+              if (!viewedTime) return true; // unviewed — never expires
+              const postAge = now - new Date(post.createdAt).getTime();
+              return postAge <= SEVEN_DAYS_MS; // viewed but fresh enough
+            });
+            // Sort: unviewed oldest-first, then viewed newest-first
+            friendPosts.sort((a, b) => {
+              const aViewed = !!viewedPostsMap[a._id];
+              const bViewed = !!viewedPostsMap[b._id];
+              if (aViewed !== bViewed) return aViewed ? 1 : -1;
+              if (!aViewed) return new Date(a.createdAt) - new Date(b.createdAt);
+              return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+            activePosts = friendPosts;
           } else if (feedFilter === 'Suggested') {
             // All suggested (ranked by interest score) first, then all following
             activePosts = [...rankedSuggested, ...followingPosts];
@@ -275,6 +308,7 @@ export default function Home() {
         setShowHeart(true);
         setTimeout(() => setShowHeart(false), 800);
       } else {
+        markPostAsViewed(post._id, user?.username);
         setSelectedPost(post);
       }
     };
@@ -352,7 +386,7 @@ export default function Home() {
               />
             </button>
             <button 
-              onClick={(e) => { e.stopPropagation(); setSelectedPost(post); }}
+              onClick={(e) => { e.stopPropagation(); markPostAsViewed(post._id, user?.username); setSelectedPost(post); }}
               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}
             >
               <MessageCircle size={24} style={{ cursor: 'pointer', color: 'var(--text-color)' }} />
@@ -474,7 +508,11 @@ export default function Home() {
 
         {/* Feed Section */}
         <div style={{ padding: '0 16px', marginTop: '24px' }}>
-            {loading ? null : feed.length > 0 ? (
+            {loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+                <div className="spinner" />
+              </div>
+            ) : feed.length > 0 ? (
               <>
                 {feed.map((post, i) => (
                   <FeedItem key={i} post={post} />
@@ -483,10 +521,35 @@ export default function Home() {
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--border-color)', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '0 auto 12px' }}>
                     <Check size={24} color="var(--text-secondary)" />
                   </div>
-                  <p style={{ fontSize: '14px', margin: 0 }}>You're all caught up</p>
+                  <p style={{ fontSize: '14px', margin: 0 }}>
+                    {feedFilter === 'Friends' ? "You're all caught up with your friends." : "You're all caught up"}
+                  </p>
                   <p style={{ fontSize: '13px', margin: '4px 0 0 0' }}>Check back later for more updates</p>
                 </div>
               </>
+            ) : feedFilter === 'Friends' ? (
+              <div style={{ padding: '48px 16px', textAlign: 'center' }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '50%', border: '2px solid var(--border-color)', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '0 auto 16px' }}>
+                  <Check size={28} color="var(--text-secondary)" />
+                </div>
+                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-color)', margin: '0 0 4px' }}>You're all caught up with your friends.</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 20px' }}>Discover new people to follow</p>
+                <button
+                  onClick={() => navigate('/discover')}
+                  style={{
+                    padding: '10px 24px',
+                    borderRadius: '20px',
+                    border: 'none',
+                    backgroundColor: 'var(--active-color)',
+                    color: 'var(--active-text)',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Discover
+                </button>
+              </div>
             ) : (
               <div style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
                 <h3 style={{ color: 'var(--text-color)', marginBottom: '8px', fontWeight: '600' }}>No posts yet.</h3>
