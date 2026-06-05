@@ -173,16 +173,6 @@ export default function Home() {
             ? suggestedPosts.filter(post => post.score > 0).sort((a, b) => b.score - a.score)
             : suggestedPosts.sort((a, b) => b.score - a.score);
 
-          const interleaveAll = (arr1, arr2) => {
-            const result = [];
-            const maxLen = Math.max(arr1.length, arr2.length);
-            for (let i = 0; i < maxLen; i++) {
-              if (i < arr1.length) result.push(arr1[i]);
-              if (i < arr2.length) result.push(arr2[i]);
-            }
-            return result;
-          };
-
           let activePosts;
           const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
           if (feedFilter === 'Friends') {
@@ -205,11 +195,65 @@ export default function Home() {
             });
             activePosts = friendPosts;
           } else if (feedFilter === 'Suggested') {
-            // All suggested (ranked by interest score) first, then all following
-            activePosts = [...rankedSuggested, ...followingPosts];
+            const viewedPostsMap = getViewedPosts(username);
+            // Only normal posts (no hub, community, channel content)
+            const isNormalPost = (p) => !p.communityId && !p.channel;
+            // Filter out viewed suggested posts — never show again in Home
+            const freshSuggested = rankedSuggested
+              .filter(isNormalPost)
+              .filter(post => !viewedPostsMap[post._id]);
+            if (followingPosts.length === 0) {
+              // No friend content — 100% suggested
+              activePosts = freshSuggested;
+            } else {
+              // 2:1 interleave (Suggested : Friend)
+              const interleaved = [];
+              let sIdx = 0, fIdx = 0;
+              while (sIdx < freshSuggested.length || fIdx < followingPosts.length) {
+                for (let i = 0; i < 2 && sIdx < freshSuggested.length; i++) {
+                  interleaved.push(freshSuggested[sIdx++]);
+                }
+                if (fIdx < followingPosts.length) {
+                  interleaved.push(followingPosts[fIdx++]);
+                }
+              }
+              activePosts = interleaved;
+            }
           } else {
-            // Balanced: interleave all posts 1:1
-            activePosts = interleaveAll(followingPosts, rankedSuggested);
+            // Balanced: 2 Friends : 1 Suggested
+            const viewedPostsMap = getViewedPosts(username);
+            const now = Date.now();
+            const isNormalPost = (p) => !p.communityId && !p.channel;
+            // Friend posts follow Friends mode rules
+            const friendPosts = followingPosts.filter(post => {
+              const viewedTime = viewedPostsMap[post._id];
+              if (!viewedTime) return true;
+              const postAge = now - new Date(post.createdAt).getTime();
+              return postAge <= SEVEN_DAYS_MS;
+            });
+            friendPosts.sort((a, b) => {
+              const aViewed = !!viewedPostsMap[a._id];
+              const bViewed = !!viewedPostsMap[b._id];
+              if (aViewed !== bViewed) return aViewed ? 1 : -1;
+              if (!aViewed) return new Date(a.createdAt) - new Date(b.createdAt);
+              return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+            // Suggested posts follow Suggested mode rules
+            const freshSuggested = rankedSuggested
+              .filter(isNormalPost)
+              .filter(post => !viewedPostsMap[post._id]);
+            // 2:1 interleave (Friends : Suggested)
+            const interleaved = [];
+            let fIdx = 0, sIdx = 0;
+            while (fIdx < friendPosts.length || sIdx < freshSuggested.length) {
+              for (let i = 0; i < 2 && fIdx < friendPosts.length; i++) {
+                interleaved.push(friendPosts[fIdx++]);
+              }
+              if (sIdx < freshSuggested.length) {
+                interleaved.push(freshSuggested[sIdx++]);
+              }
+            }
+            activePosts = interleaved;
           }
 
                   const activeStories = storiesData.filter(story => following.includes(story.author) || story.author === username);
@@ -522,12 +566,12 @@ export default function Home() {
                     <Check size={24} color="var(--text-secondary)" />
                   </div>
                   <p style={{ fontSize: '14px', margin: 0 }}>
-                    {feedFilter === 'Friends' ? "You're all caught up with your friends." : "You're all caught up"}
+                    {feedFilter === 'Friends' || feedFilter === 'Balanced' ? "You're all caught up with your friends." : "You're all caught up"}
                   </p>
                   <p style={{ fontSize: '13px', margin: '4px 0 0 0' }}>Check back later for more updates</p>
                 </div>
               </>
-            ) : feedFilter === 'Friends' ? (
+            ) : feedFilter === 'Friends' || feedFilter === 'Balanced' ? (
               <div style={{ padding: '48px 16px', textAlign: 'center' }}>
                 <div style={{ width: '56px', height: '56px', borderRadius: '50%', border: '2px solid var(--border-color)', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '0 auto 16px' }}>
                   <Check size={28} color="var(--text-secondary)" />
