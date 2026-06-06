@@ -71,7 +71,7 @@ export default function Home() {
           const following = user?.following || [];
           const username = user?.username;
 
-          const allPosts = allContent.filter(p => p.type !== 'discussion');
+          const allPosts = allContent.filter(p => p.type !== 'discussion' && !p.communityId && !p.channel);
 
           // CLIENT-SIDE PRIVACY SAFETY NET — verify server filtered correctly
           // Fetch user privacy data for defense-in-depth
@@ -196,11 +196,8 @@ export default function Home() {
             activePosts = friendPosts;
           } else if (feedFilter === 'Suggested') {
             const viewedPostsMap = getViewedPosts(username);
-            // Only normal posts (no hub, community, channel content)
-            const isNormalPost = (p) => !p.communityId && !p.channel;
             // Filter out viewed suggested posts — never show again in Home
             const freshSuggested = rankedSuggested
-              .filter(isNormalPost)
               .filter(post => !viewedPostsMap[post._id]);
             if (followingPosts.length === 0) {
               // No friend content — 100% suggested
@@ -223,7 +220,6 @@ export default function Home() {
             // Balanced: 2 Friends : 1 Suggested
             const viewedPostsMap = getViewedPosts(username);
             const now = Date.now();
-            const isNormalPost = (p) => !p.communityId && !p.channel;
             // Friend posts follow Friends mode rules
             const friendPosts = followingPosts.filter(post => {
               const viewedTime = viewedPostsMap[post._id];
@@ -240,7 +236,6 @@ export default function Home() {
             });
             // Suggested posts follow Suggested mode rules
             const freshSuggested = rankedSuggested
-              .filter(isNormalPost)
               .filter(post => !viewedPostsMap[post._id]);
             // 2:1 interleave (Friends : Suggested)
             const interleaved = [];
@@ -339,6 +334,28 @@ export default function Home() {
     const [showHeart, setShowHeart] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const itemRef = useRef(null);
+    const observedRef = useRef(false);
+
+    // Mark post as viewed when it enters the viewport
+    useEffect(() => {
+      if (!user?.username) return;
+      if (observedRef.current) return;
+      const el = itemRef.current;
+      if (!el) return;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            observedRef.current = true;
+            markPostAsViewed(post._id, user.username);
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.5 }
+      );
+      observer.observe(el);
+      return () => observer.disconnect();
+    }, [post._id, user?.username]);
 
     const handleImageClick = (e) => {
       const now = Date.now();
@@ -359,7 +376,7 @@ export default function Home() {
     
     return (
       <>
-      <div className="feed-item">
+      <div className="feed-item" ref={itemRef}>
         <div className="feed-header" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={() => navigate(`/profile/${post.username}`)}>
             <Avatar username={post.username} image={post.profilePhoto} size={32} />
