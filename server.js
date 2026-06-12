@@ -816,11 +816,14 @@ app.get('/api/users/search', async (req, res) => {
   try {
     const { q, currentUsername } = req.query;
     if (!q || !q.trim()) return res.json([]);
-    const query = q.trim();
-    let users = await User.find(
-      { $text: { $search: query } },
-      { score: { $meta: 'textScore' } }
-    ).select('-password -followRequests').sort({ score: { $meta: 'textScore' } }).limit(20);
+    const terms = q.trim().split(/\s+/).filter(Boolean);
+    const conditions = [];
+    terms.forEach(term => {
+      conditions.push({ username: { $regex: term, $options: 'i' } });
+      conditions.push({ name: { $regex: term, $options: 'i' } });
+    });
+    let users = await User.find(conditions.length > 0 ? { $or: conditions } : {})
+      .select('-password -followRequests').limit(20);
     // Block filter
     if (currentUsername) {
       const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers').lean();
@@ -3041,9 +3044,15 @@ app.get('/api/communities/search', async (req, res) => {
     const { q } = req.query;
     const filter = { isPrivate: false };
     if (q && q.trim()) {
-      filter.$text = { $search: q.trim() };
-      const communities = await Community.find(filter, { score: { $meta: 'textScore' } })
-        .sort({ score: { $meta: 'textScore' } }).limit(20).lean();
+      const terms = q.trim().split(/\s+/).filter(Boolean);
+      const conditions = [];
+      terms.forEach(term => {
+        conditions.push({ name: { $regex: term, $options: 'i' } });
+        conditions.push({ description: { $regex: term, $options: 'i' } });
+        conditions.push({ tags: { $regex: term, $options: 'i' } });
+      });
+      const communities = await Community.find({ ...filter, $or: conditions })
+        .sort({ memberCount: -1 }).limit(20).lean();
       return res.json(communities);
     }
     const communities = await Community.find(filter).sort({ memberCount: -1 }).limit(20).lean();
