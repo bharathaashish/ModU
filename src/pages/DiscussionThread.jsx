@@ -371,7 +371,7 @@ export default function DiscussionThread() {
   if (!post) {
     return (
       <div className="thread-container" style={{ textAlign: 'center', paddingTop: '80px', color: 'var(--text-secondary)' }}>
-        Loading discussion...
+        Loading...
       </div>
     );
   }

@@ -111,7 +111,7 @@ export default function SharedInterestPosts() {
   useEffect(() => {
     async function load() {
       const [postsRes, commRes, joinedRes, usersRes] = await Promise.all([
-        fetch('/api/posts'),
+        fetch(`/api/posts?currentUsername=${user?.username || ''}`),
         fetch('/api/communities'),
         user ? fetch(`/api/community/joined/${user.username}`) : Promise.resolve({ ok: false }),
         fetch(`/api/users?currentUsername=${user?.username || ''}`)

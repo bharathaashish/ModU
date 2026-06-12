@@ -421,9 +421,11 @@ export default function Home() {
           {post.image && (
             <div 
               className="feed-image" 
-              style={{ backgroundImage: `url(${post.image})`, backgroundSize: 'cover', cursor: 'pointer' }}
               onClick={handleImageClick}
-            />
+              style={{ cursor: 'pointer' }}
+            >
+              <img src={post.image} alt="" />
+            </div>
           )}
           {showHeart && (
             <div style={{

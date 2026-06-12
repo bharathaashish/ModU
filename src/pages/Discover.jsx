@@ -108,7 +108,7 @@ export default function Discover() {
     async function load() {
       const [usersRes, postsRes, discRes, hubsRes, commRes, joinedRes] = await Promise.all([
         fetch(`/api/users?currentUsername=${user?.username || ''}`),
-        fetch('/api/posts'),
+        fetch(`/api/posts?currentUsername=${user?.username || ''}`),
         fetch(`/api/posts/discussions?username=${user?.username || ''}&sort=trending`),
         fetch('/api/hubs'),
         fetch('/api/communities'),
