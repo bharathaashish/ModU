@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, LogOut, Shield, Sliders, Palette, Heart, Bookmark, Layers, Activity, MessageCircle, UserPlus, Eye, List, Ban, Users, Clock } from 'lucide-react';
+import { ArrowLeft, ChevronRight, LogOut, Shield, Sliders, Palette, Heart, Bookmark, Layers, Activity, MessageCircle, UserPlus, Eye, List, Ban, Users, Clock, Trash2, AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const menuItems = [
@@ -22,6 +22,9 @@ export default function Settings() {
   const [allPosts, setAllPosts] = useState([]);
   const [allComments, setAllComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function loadActivity() {
@@ -41,6 +44,20 @@ export default function Settings() {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirm !== user?.username || deleting) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/users/${user.username}`, { method: 'DELETE' });
+      if (res.ok) {
+        logout();
+        navigate('/login');
+      }
+    } catch {
+      setDeleting(false);
+    }
   };
 
   const myActivity = user ? [
@@ -175,7 +192,62 @@ export default function Settings() {
             Log Out
           </button>
         </div>
+
+        {/* Delete Account */}
+        <div style={{ padding: '0 16px 24px' }}>
+          <button onClick={() => setShowDeleteModal(true)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '14px', backgroundColor: 'transparent', border: '1.5px solid #e53935', borderRadius: '8px', color: '#e53935', fontWeight: 600, fontSize: '15px', cursor: 'pointer' }}>
+            <Trash2 size={18} />
+            Delete Account
+          </button>
+        </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }} onClick={() => { if (!deleting) setShowDeleteModal(false) }}>
+          <div style={{ maxWidth: '400px', width: '100%', backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '24px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <AlertTriangle size={22} color="#e53935" />
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: 'var(--text-color)' }}>Delete Account</h3>
+              </div>
+              <button onClick={() => setShowDeleteModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', display: deleting ? 'none' : 'block' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5', margin: '0 0 12px' }}>
+              This will permanently delete your account and all associated data — posts, comments, messages, followers, and more. This action cannot be undone.
+            </p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 16px' }}>
+              Type <strong style={{ color: 'var(--text-color)' }}>{user?.username}</strong> to confirm:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirm}
+              onChange={e => setDeleteConfirm(e.target.value)}
+              placeholder="Enter your username"
+              style={{ width: '100%', padding: '12px 14px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-color)', fontSize: '14px', outline: 'none', fontFamily: 'var(--font-sans)', marginBottom: '16px' }}
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirm(''); }}
+                disabled={deleting}
+                style={{ flex: 1, padding: '12px', backgroundColor: 'var(--surface-alt)', border: 'none', borderRadius: '8px', color: 'var(--text-color)', fontWeight: 600, fontSize: '14px', cursor: deleting ? 'not-allowed' : 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirm !== user?.username || deleting}
+                style={{ flex: 1, padding: '12px', backgroundColor: deleteConfirm === user?.username && !deleting ? '#e53935' : 'var(--border-color)', border: 'none', borderRadius: '8px', color: deleteConfirm === user?.username && !deleting ? '#fff' : 'var(--text-secondary)', fontWeight: 600, fontSize: '14px', cursor: deleteConfirm === user?.username && !deleting ? 'pointer' : 'not-allowed' }}
+              >
+                {deleting ? 'Deleting...' : 'Delete Permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

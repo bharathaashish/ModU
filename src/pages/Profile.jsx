@@ -30,6 +30,7 @@ export default function Profile() {
   const [isProfileMuted, setIsProfileMuted] = useState(false);
   const [userStories, setUserStories] = useState([]);
   const [viewingStories, setViewingStories] = useState(null);
+  const [failedImages, setFailedImages] = useState(new Set());
 
   const handleDeletePost = async () => {
     if (!deleteTargetId) return;
@@ -496,10 +497,11 @@ export default function Profile() {
             gap: '2px',
             width: '100%',
           }}>
-            {userPosts.map((post, idx) => (
+            {userPosts.map((post, idx) => {
+              const imgFailed = failedImages.has(post._id);
+              return (
               <div
                 key={post._id || idx}
-                onClick={() => setSelectedPost(post)}
                 style={{
                   position: 'relative',
                   paddingBottom: '100%',
@@ -508,47 +510,97 @@ export default function Profile() {
                   overflow: 'hidden',
                 }}
               >
-                {post.image ? (
-                  <img
-                    src={post.image}
-                    alt=""
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
+                <div
+                  onClick={() => setSelectedPost(post)}
+                  style={{ position: 'absolute', inset: 0 }}
+                >
+                  {post.image && !imgFailed ? (
+                    <img
+                      src={post.image}
+                      alt=""
+                      onError={() => setFailedImages(prev => new Set(prev).add(post._id))}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                      }}
+                    />
+                  ) : (
+                    <div style={{
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover',
-                      display: 'block',
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '8px',
-                    gap: '4px',
-                  }}>
-                    <MessageCircle size={18} color="var(--text-secondary)" />
-                    <span style={{
-                      fontSize: '11px',
-                      color: 'var(--text-secondary)',
-                      textAlign: 'center',
-                      lineHeight: '1.4',
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '8px',
+                      gap: '4px',
                     }}>
-                      {post.content}
-                    </span>
+                      <MessageCircle size={18} color="var(--text-secondary)" />
+                      <span style={{
+                        fontSize: '11px',
+                        color: 'var(--text-secondary)',
+                        textAlign: 'center',
+                        lineHeight: '1.4',
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                      }}>
+                        {post.content}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {isOwnProfile && (
+                  <div style={{ position: 'absolute', top: 4, right: 4, zIndex: 2 }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setMenuPostId(menuPostId === post._id ? null : post._id); }}
+                      style={{
+                        background: 'rgba(0,0,0,0.5)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: 28,
+                        height: 28,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: 'white',
+                        opacity: 0.85,
+                      }}
+                    >
+                      <MoreHorizontal size={16} />
+                    </button>
+                    {menuPostId === post._id && (
+                      <>
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setMenuPostId(null)} />
+                        <div style={{
+                          position: 'absolute', top: '100%', right: 0, zIndex: 51,
+                          backgroundColor: 'var(--card-bg)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '10px',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                          minWidth: '160px',
+                          overflow: 'hidden',
+                        }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setMenuPostId(null); setDeleteTargetId(post._id); }}
+                            style={{
+                              width: '100%', padding: '10px 14px', background: 'none', border: 'none',
+                              color: 'var(--text-color)', fontSize: '14px', cursor: 'pointer', textAlign: 'left', fontWeight: 500,
+                            }}
+                          >
+                            Delete Post
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>

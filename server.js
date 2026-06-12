@@ -186,6 +186,7 @@ const UserSchema = new mongoose.Schema({
 UserSchema.index({ username: 1 });
 UserSchema.index({ 'blockedUsers.username': 1 });
 UserSchema.index({ 'profileMutedUsers.username': 1 });
+UserSchema.index({ username: 'text', name: 'text' });
 
 // ── Visibility helper functions ──
 function canViewPhoto(user, viewerUsername) {
@@ -333,6 +334,8 @@ const CommunitySchema = new mongoose.Schema({
   }],
   createdAt: { type: Date, default: Date.now }
 });
+
+CommunitySchema.index({ name: 'text', description: 'text', tags: 'text' });
 
 const HubSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -779,14 +782,11 @@ app.get('/api/users/search', async (req, res) => {
   try {
     const { q, currentUsername } = req.query;
     if (!q || !q.trim()) return res.json([]);
-    const terms = q.trim().split(/\s+/).filter(Boolean);
-    const conditions = [];
-    terms.forEach(term => {
-      conditions.push({ username: { $regex: term, $options: 'i' } });
-      conditions.push({ name: { $regex: term, $options: 'i' } });
-    });
-    const query = conditions.length > 0 ? { $or: conditions } : {};
-    let users = await User.find(query).select('-password -followRequests').limit(20);
+    const query = q.trim();
+    let users = await User.find(
+      { $text: { $search: query } },
+      { score: { $meta: 'textScore' } }
+    ).select('-password -followRequests').sort({ score: { $meta: 'textScore' } }).limit(20);
     // Block filter
     if (currentUsername) {
       const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers').lean();
@@ -930,7 +930,13 @@ app.put('/api/users/:username', async (req, res) => {
     const updateFields = {};
     if (name !== undefined) updateFields.name = name;
     if (email !== undefined) updateFields.email = email;
-    if (age !== undefined) updateFields.age = Number(age);
+    if (age !== undefined && age !== null && age !== '') {
+      const ageNum = Number(age);
+      if (isNaN(ageNum) || ageNum < 12 || ageNum > 120) {
+        return res.status(400).json({ message: 'Please provide a valid age (12+)' });
+      }
+      updateFields.age = ageNum;
+    }
     if (phone !== undefined) updateFields.phone = phone;
     if (bio !== undefined) updateFields.bio = bio;
     if (interests !== undefined) updateFields.interests = interests;
@@ -1001,6 +1007,87 @@ app.put('/api/users/:username', async (req, res) => {
     res.json(user);
   } catch (err) {
     console.error('[UPDATE] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE ACCOUNT — hard delete of user and all associated data
+app.delete('/api/users/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const userId = user._id;
+
+    // Delete all Posts by this user + their comments
+    const userPostIds = await Post.find({ username }).distinct('_id');
+    if (userPostIds.length > 0) {
+      await Comment.deleteMany({ postId: { $in: userPostIds } });
+      await Like.deleteMany({ postId: { $in: userPostIds } });
+      await Saved.deleteMany({ postId: { $in: userPostIds } });
+    }
+    await Post.deleteMany({ username });
+
+    // Delete all Comments by this user (on any post)
+    await Comment.deleteMany({ username });
+
+    // Delete all Messages involving this user
+    await Message.deleteMany({ $or: [{ sender: username }, { receiver: username }] });
+    await MessageRequest.deleteMany({ $or: [{ sender: username }, { receiver: username }] });
+
+    // Remove this user from other users' relational arrays (username strings)
+    await User.updateMany({}, {
+      $pull: {
+        followers: username,
+        following: username,
+        closeFriends: username,
+        'blockedUsers': { username },
+        'profileMutedUsers': { username },
+        'dmMutedUsers': { username },
+        nicknames: { partner: username },
+        acceptedConversations: { partner: username },
+        hiddenConversations: { partner: username },
+        notifications: { fromUser: username },
+        followRequests: { fromUsername: username },
+      }
+    });
+
+    // Remove this user's likes/upvotes/downvotes from Posts
+    await Post.updateMany(
+      { likedBy: username },
+      { $pull: { likedBy: username }, $inc: { likes: -1 } }
+    );
+    await Post.updateMany({}, {
+      $pull: { upvotedBy: username, downvotedBy: username }
+    });
+
+    // Remove this user's likes/upvotes/downvotes from Comments
+    await Comment.updateMany({}, {
+      $pull: { likedBy: username, upvotedBy: username, downvotedBy: username }
+    });
+
+    // Remove from Community members
+    await Community.updateMany({}, { $pull: { members: { username } } });
+
+    // Delete Vote/Like/Saved docs referencing this user
+    await Vote.deleteMany({ userId: username });
+    await Like.deleteMany({ userId });
+    await Saved.deleteMany({ userId });
+
+    // Delete Stories
+    await Story.deleteMany({ author: username });
+
+    // Delete ChannelMessages
+    await ChannelMessage.deleteMany({ senderUsername: username });
+
+    // Delete the user document
+    await User.deleteOne({ _id: userId });
+
+    res.json({ success: true, message: 'Account and all associated data deleted permanently' });
+  } catch (err) {
+    console.error('[DELETE ACCOUNT] error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1934,7 +2021,7 @@ app.post('/api/posts', async (req, res) => {
 });
 
 const INTEREST_KEYWORDS = [
-  { interest: 'gaming', keywords: ['valorant', 'minecraft', 'elden ring', 'gaming', 'nintendo', 'playstation', 'xbox', 'pc gaming', 'league of legends', 'fortnite', 'call of duty', 'gta', 'roblox', 'steam', 'esports', 'speedrun', 'retro', 'arcade', 'rpg', 'fps'] },
+  { interest: 'gaming', keywords: ['valorant', 'minecraft', 'elden ring', 'gaming', 'game', 'games', 'gamer', 'nintendo', 'playstation', 'xbox', 'pc gaming', 'league of legends', 'fortnite', 'call of duty', 'gta', 'roblox', 'steam', 'esports', 'speedrun', 'retro', 'arcade', 'rpg', 'fps'] },
   { interest: 'anime', keywords: ['anime', 'manga', 'naruto', 'one piece', 'attack on titan', 'aot', 'jujutsu kaisen', 'demon slayer', 'dragon ball', 'pokemon', 'studio ghibli', 'spirited away', 'death note', 'fullmetal', 'hunter x hunter', 'cosplay', 'waifu', 'otaku', 'shonen', 'isekai'] },
   { interest: 'movies', keywords: ['movie', 'film', 'cinema', 'netflix', 'marvel', 'dc', 'hollywood', 'bollywood', 'oscar', 'thriller', 'horror', 'comedy', 'drama', 'documentary', 'sci-fi', 'imdb', 'blockbuster', 'director', 'screenplay', 'animation'] },
   { interest: 'music', keywords: ['music', 'song', 'album', 'spotify', 'concert', 'band', 'guitar', 'piano', 'hip hop', 'rock', 'pop', 'jazz', 'classical', 'lofi', 'playlist', 'singer', 'producer', 'festival', 'vinyl', 'beat'] },
@@ -2917,12 +3004,11 @@ app.get('/api/communities/search', async (req, res) => {
   try {
     const { q } = req.query;
     const filter = { isPrivate: false };
-    if (q) {
-      filter.$or = [
-        { name: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
-        { tags: { $regex: q, $options: 'i' } }
-      ];
+    if (q && q.trim()) {
+      filter.$text = { $search: q.trim() };
+      const communities = await Community.find(filter, { score: { $meta: 'textScore' } })
+        .sort({ score: { $meta: 'textScore' } }).limit(20).lean();
+      return res.json(communities);
     }
     const communities = await Community.find(filter).sort({ memberCount: -1 }).limit(20).lean();
     res.json(communities);
