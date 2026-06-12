@@ -160,7 +160,7 @@ h2 { font-size: var(--fs-lg); font-weight: 500; }
 
 .input {
   width: 100%;
-  padding: 10px 14px;
+  padding: 13px 14px;
   background-color: var(--surface-alt);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);

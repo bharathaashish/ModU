@@ -9,6 +9,11 @@ const VISIBILITY_OPTIONS = [
   { value: 'nobody', label: 'Nobody', desc: 'Hidden from everyone' },
 ];
 
+const VISIBILITY_OPTIONS_NO_NOBODY = [
+  { value: 'everyone', label: 'Everyone', desc: 'All users can see this' },
+  { value: 'followers', label: 'Followers Only', desc: 'Only your followers can see this' },
+];
+
 const ACCOUNT_OPTIONS = [
   { value: false, label: 'Public Account', desc: 'Anyone can see your posts and stories', icon: Globe },
   { value: true, label: 'Private Account', desc: 'Only approved followers can see your posts and stories', icon: Lock },
@@ -149,7 +154,7 @@ export default function Privacy() {
               <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>{section.label}</span>
             </div>
             <div style={{ padding: '8px' }}>
-              {VISIBILITY_OPTIONS.map(opt => (
+              {(section.id === 'photoVisibility' ? VISIBILITY_OPTIONS_NO_NOBODY : VISIBILITY_OPTIONS).map(opt => (
                 <div
                   key={opt.value}
                   onClick={() => handleChange(section.id, opt.value)}

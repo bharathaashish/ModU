@@ -296,9 +296,6 @@ export default function Profile() {
             <div className="profile-actions-buttons">
               {isOwnProfile ? (
                 <>
-                  <button onClick={() => navigate('/settings')} className="ghost-button profile-hero-btn">
-                    Settings
-                  </button>
                   <button onClick={() => navigate('/edit-profile')} className="ghost-button profile-hero-btn">
                     Edit Profile
                   </button>
