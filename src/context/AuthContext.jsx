@@ -83,13 +83,13 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('currentUser');
   };
 
-  const updateUserSettings = async ({ interests, feedPreference }) => {
+  const updateUserSettings = async ({ interests, blockedInterests, feedPreference }) => {
     if (!user) return;
     try {
       const res = await fetch(`/api/user/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user.username, interests, feedPreference })
+        body: JSON.stringify({ username: user.username, interests, blockedInterests, feedPreference })
       });
       if (res.ok) {
         const updatedUser = await res.json();

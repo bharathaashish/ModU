@@ -132,6 +132,7 @@ const UserSchema = new mongoose.Schema({
   age: { type: Number },
   phone: { type: String },
   interests: [{ type: String }],
+  blockedInterests: [{ type: String }],
   bio: { type: String, default: '' },
   profilePhoto: { type: String, default: '' },
   photoCrop: {
@@ -201,6 +202,14 @@ function canViewInterests(user, viewerUsername) {
   if (user.username === viewerUsername) return true;
   if ((user.interestVisibility || 'everyone') !== 'followers') return true;
   return (user.followers || []).includes(viewerUsername);
+}
+
+function filterBlockedInterests(items, blockedInterests) {
+  if (!blockedInterests || blockedInterests.length === 0) return items;
+  return items.filter(item => {
+    const tags = item.tags || [];
+    return !tags.some(tag => blockedInterests.includes(tag));
+  });
 }
 
 const PollOptionSchema = new mongoose.Schema({
@@ -924,7 +933,7 @@ app.delete('/api/users/:username/photo', async (req, res) => {
 
 app.put('/api/users/:username', async (req, res) => {
   try {
-    const { name, username: newUsername, email, age, phone, bio, interests, feedPreference, isPrivate } = req.body;
+    const { name, username: newUsername, email, age, phone, bio, interests, blockedInterests, feedPreference, isPrivate } = req.body;
 
     // Only set fields that were actually provided — skip undefined to avoid overwriting existing data
     const updateFields = {};
@@ -940,6 +949,7 @@ app.put('/api/users/:username', async (req, res) => {
     if (phone !== undefined) updateFields.phone = phone;
     if (bio !== undefined) updateFields.bio = bio;
     if (interests !== undefined) updateFields.interests = interests;
+    if (blockedInterests !== undefined) updateFields.blockedInterests = blockedInterests;
     if (feedPreference !== undefined) updateFields.feedPreference = feedPreference;
     if (isPrivate !== undefined) updateFields.isPrivate = isPrivate;
     if (req.body.photoVisibility !== undefined) updateFields.photoVisibility = req.body.photoVisibility;
@@ -1880,10 +1890,19 @@ app.get('/api/users/:username/posts', async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    // Blocked interests filter for the viewer
+    let filtered = posts;
+    if (currentUsername) {
+      const viewer = await User.findOne({ username: currentUsername }).select('blockedInterests').lean();
+      if (viewer?.blockedInterests?.length > 0) {
+        filtered = filterBlockedInterests(filtered, viewer.blockedInterests);
+      }
+    }
+
     // Attach profilePhoto
     const userDoc = await User.findOne({ username }).select('username profilePhoto photoVisibility followers').lean();
     const photo = userDoc && canViewPhoto(userDoc, currentUsername) ? userDoc.profilePhoto || '' : '';
-    const result = posts.map(p => ({ ...p, profilePhoto: photo }));
+    const result = filtered.map(p => ({ ...p, profilePhoto: photo }));
 
     res.json(result);
   } catch (err) {
@@ -1922,10 +1941,10 @@ app.get('/api/posts', async (req, res) => {
       });
     }
 
-    // BLOCK FILTER + PROFILE MUTE FILTER
+    // BLOCK FILTER + PROFILE MUTE FILTER + BLOCKED INTERESTS FILTER
     if (currentUsername) {
       const [currentUser, blockers] = await Promise.all([
-        User.findOne({ username: currentUsername }).select('blockedUsers profileMutedUsers').lean(),
+        User.findOne({ username: currentUsername }).select('blockedUsers profileMutedUsers blockedInterests').lean(),
         User.find({ 'blockedUsers.username': currentUsername }).select('username').lean(),
       ]);
       const blockedUsernames = (currentUser?.blockedUsers || []).map(b => b.username);
@@ -1940,6 +1959,9 @@ app.get('/api/posts', async (req, res) => {
       const hidden = new Set([...allBlocked, ...mutedUsernames]);
       if (hidden.size > 0) {
         allContent = allContent.filter(item => !hidden.has(item.username));
+      }
+      if (currentUser?.blockedInterests?.length > 0) {
+        allContent = filterBlockedInterests(allContent, currentUser.blockedInterests);
       }
     }
 
@@ -2053,7 +2075,7 @@ app.get('/api/posts/discussions', async (req, res) => {
     const [discussions, userDoc, currentUser, blockers] = await Promise.all([
       Post.find({ type: 'discussion' }).lean(),
       username ? User.findOne({ username }).select('interests').lean() : null,
-      username ? User.findOne({ username }).select('blockedUsers profileMutedUsers').lean() : null,
+      username ? User.findOne({ username }).select('blockedUsers profileMutedUsers blockedInterests').lean() : null,
       username ? User.find({ 'blockedUsers.username': username }).select('username').lean() : [],
     ]);
 
@@ -2073,6 +2095,9 @@ app.get('/api/posts/discussions', async (req, res) => {
       const hidden = new Set([...allBlocked, ...mutedUsernames]);
       if (hidden.size > 0) {
         discussions = discussions.filter(d => !hidden.has(d.username));
+      }
+      if (currentUser?.blockedInterests?.length > 0) {
+        discussions = filterBlockedInterests(discussions, currentUser.blockedInterests);
       }
     }
 
@@ -2162,6 +2187,14 @@ app.get('/api/posts/community/:communityId', async (req, res) => {
     let posts = await Post.find({ communityId: req.params.communityId })
       .sort({ createdAt: -1 })
       .lean();
+    // Blocked interests filter for the viewer
+    const { currentUsername } = req.query;
+    if (currentUsername) {
+      const viewer = await User.findOne({ username: currentUsername }).select('blockedInterests').lean();
+      if (viewer?.blockedInterests?.length > 0) {
+        posts = filterBlockedInterests(posts, viewer.blockedInterests);
+      }
+    }
     // Attach profilePhoto (respecting photo visibility)
     const commUsernames = [...new Set(posts.map(p => p.username))];
     const commUsers = await User.find({ username: { $in: commUsernames } }).select('username profilePhoto photoVisibility followers').lean();
@@ -2750,10 +2783,14 @@ app.patch('/api/notifications/:id/read', async (req, res) => {
 
 app.patch('/api/user/settings', async (req, res) => {
   try {
-    const { username, interests, feedPreference } = req.body;
+    const { username, interests, blockedInterests, feedPreference } = req.body;
+    const update = {};
+    if (interests !== undefined) update.interests = interests;
+    if (blockedInterests !== undefined) update.blockedInterests = blockedInterests;
+    if (feedPreference !== undefined) update.feedPreference = feedPreference;
     const user = await User.findOneAndUpdate(
       { username },
-      { $set: { interests, feedPreference } },
+      { $set: update },
       { new: true }
     );
     res.json(user);

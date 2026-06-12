@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Layers, Check, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, Layers, Check, Sparkles, Ban } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { CONTENT_TYPES } from '../constants/contentTypes';
 
@@ -11,6 +11,7 @@ export default function EditInterests() {
   const { user, updateUserSettings } = useAuth();
 
   const [selectedInterests, setSelectedInterests] = useState(() => user?.interests || []);
+  const [blockedInterests, setBlockedInterests] = useState(() => user?.blockedInterests || []);
   const [savedMsg, setSavedMsg] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -24,8 +25,18 @@ export default function EditInterests() {
   };
 
   const handleSave = async () => {
-    await updateUserSettings({ interests: selectedInterests, feedPreference: user?.feedPreference });
+    await updateUserSettings({ interests: selectedInterests, blockedInterests, feedPreference: user?.feedPreference });
     showMsg('Interests saved successfully');
+  };
+
+  const toggleBlockedInterest = (id) => {
+    setBlockedInterests(prev => {
+      if (prev.includes(id)) return prev.filter(i => i !== id);
+      if (selectedInterests.includes(id)) {
+        setSelectedInterests(s => s.filter(i => i !== id));
+      }
+      return [...prev, id];
+    });
   };
 
   const toggleInterest = (id) => {
@@ -111,6 +122,44 @@ export default function EditInterests() {
             <span style={{ fontSize: '14px', color: 'var(--text-color)' }}>Selected Interests</span>
           </div>
           <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>{selectedInterests.length} / {CONTENT_TYPES.length}</span>
+        </div>
+
+        {/* Blocked Interests */}
+        <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            <Ban size={16} />
+            <span>BLOCKED INTERESTS</span>
+          </div>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+            Click interests below to block their posts from your feed.
+          </p>
+
+          {categories.map(cat => (
+            <div key={cat} style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{cat}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {grouped[cat].map(type => {
+                  const blocked = blockedInterests.includes(type.id);
+                  return (
+                    <button key={type.id} onClick={() => toggleBlockedInterest(type.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '10px 16px', borderRadius: '20px',
+                        border: `1px solid ${blocked ? '#e74c3c' : 'var(--border-color)'}`,
+                        backgroundColor: blocked ? 'rgba(231,76,60,0.12)' : 'var(--card-bg)',
+                        color: blocked ? '#e74c3c' : 'var(--text-color)',
+                        fontSize: '13px', fontWeight: blocked ? 600 : 500,
+                        cursor: 'pointer', transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {blocked && <Ban size={14} />}
+                      {type.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         <button onClick={handleSave}
