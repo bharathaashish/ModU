@@ -145,6 +145,19 @@ const UserSchema = new mongoose.Schema({
   followingVisibility: { type: String, enum: ['everyone', 'followers', 'nobody'], default: 'everyone' },
   isPrivate: { type: Boolean, default: false },
   feedPreference: { type: String, default: 'Friends', enum: ['Balanced', 'Friends', 'Suggested'] },
+  discoverWidgets: {
+    type: [{
+      id: { type: String },
+      visible: { type: Boolean, default: true },
+      pinned: { type: Boolean, default: false }
+    }],
+    default: () => [
+      { id: 'interestPosts', visible: true, pinned: false },
+      { id: 'activeDiscussions', visible: true, pinned: false },
+      { id: 'suggestedConnections', visible: true, pinned: false },
+      { id: 'interestHubs', visible: true, pinned: false },
+    ]
+  },
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
   followers: [{ type: String }],
   following: [{ type: String }],
@@ -721,8 +734,20 @@ app.post('/api/auth/register', async (req, res) => {
       }
     }
 
+    if (email) {
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail) return res.status(400).json({ message: 'Email already in use' });
+    }
+
     let user = await User.findOne({ username });
-    if (user) return res.status(400).json({ message: 'Username already taken' });
+    if (user) {
+      // If the found document lacks a password, it's a stale zombie from a partial delete — purge it
+      if (!user.password) {
+        await User.deleteOne({ _id: user._id });
+      } else {
+        return res.status(400).json({ message: 'Username already taken' });
+      }
+    }
 
     user = new User({ username, name, password, email, age, phone });
     await user.save();
@@ -1025,79 +1050,50 @@ app.put('/api/users/:username', async (req, res) => {
 app.delete('/api/users/:username', async (req, res) => {
   try {
     const { username } = req.params;
+    console.log('[DELETE ACCOUNT] looking up:', username);
 
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ error: 'User not found' });
+    console.log('[DELETE ACCOUNT] found, userId:', user._id);
 
     const userId = user._id;
 
-    // Delete all Posts by this user + their comments
-    const userPostIds = await Post.find({ username }).distinct('_id');
-    if (userPostIds.length > 0) {
-      await Comment.deleteMany({ postId: { $in: userPostIds } });
-      await Like.deleteMany({ postId: { $in: userPostIds } });
-      await Saved.deleteMany({ postId: { $in: userPostIds } });
-    }
-    await Post.deleteMany({ username });
-
-    // Delete all Comments by this user (on any post)
-    await Comment.deleteMany({ username });
-
-    // Delete all Messages involving this user
-    await Message.deleteMany({ $or: [{ sender: username }, { receiver: username }] });
-    await MessageRequest.deleteMany({ $or: [{ sender: username }, { receiver: username }] });
-
-    // Remove this user from other users' relational arrays (username strings)
-    await User.updateMany({}, {
-      $pull: {
-        followers: username,
-        following: username,
-        closeFriends: username,
-        'blockedUsers': { username },
-        'profileMutedUsers': { username },
-        'dmMutedUsers': { username },
-        nicknames: { partner: username },
-        acceptedConversations: { partner: username },
-        hiddenConversations: { partner: username },
-        notifications: { fromUser: username },
-        followRequests: { fromUsername: username },
-      }
-    });
-
-    // Remove this user's likes/upvotes/downvotes from Posts
-    await Post.updateMany(
-      { likedBy: username },
-      { $pull: { likedBy: username }, $inc: { likes: -1 } }
-    );
-    await Post.updateMany({}, {
-      $pull: { upvotedBy: username, downvotedBy: username }
-    });
-
-    // Remove this user's likes/upvotes/downvotes from Comments
-    await Comment.updateMany({}, {
-      $pull: { likedBy: username, upvotedBy: username, downvotedBy: username }
-    });
-
-    // Remove from Community members
-    await Community.updateMany({}, { $pull: { members: { username } } });
-
-    // Delete Vote/Like/Saved docs referencing this user
-    await Vote.deleteMany({ userId: username });
-    await Like.deleteMany({ userId });
-    await Saved.deleteMany({ userId });
-
-    // Delete Stories
-    await Story.deleteMany({ author: username });
-
-    // Delete ChannelMessages
-    await ChannelMessage.deleteMany({ senderUsername: username });
-
-    // Delete the user document
+    // Delete the user document FIRST so re-registration with same username works
     await User.deleteOne({ _id: userId });
+    console.log('[DELETE ACCOUNT] user document deleted');
 
+    // Best-effort cleanup of associated data — each step has its own try-catch
+    try { await Post.deleteMany({ username }); } catch (e) { console.error('[CLEANUP posts]', e.message); }
+    try { await Comment.deleteMany({ username }); } catch (e) { console.error('[CLEANUP comments]', e.message); }
+    try { await Message.deleteMany({ $or: [{ sender: username }, { receiver: username }] }); } catch (e) { console.error('[CLEANUP messages]', e.message); }
+    try { await MessageRequest.deleteMany({ $or: [{ sender: username }, { receiver: username }] }); } catch (e) { console.error('[CLEANUP msgRequests]', e.message); }
+    try { await Story.deleteMany({ author: username }); } catch (e) { console.error('[CLEANUP stories]', e.message); }
+    try { await ChannelMessage.deleteMany({ senderUsername: username }); } catch (e) { console.error('[CLEANUP channelMessages]', e.message); }
+    try { await Vote.deleteMany({ userId: username }); } catch (e) { console.error('[CLEANUP votes]', e.message); }
+
+    try {
+      await User.updateMany({}, {
+        $pull: {
+          followers: username, following: username, closeFriends: username,
+          'blockedUsers': { username }, 'profileMutedUsers': { username }, 'dmMutedUsers': { username },
+          nicknames: { partner: username }, acceptedConversations: { partner: username },
+          hiddenConversations: { partner: username }, notifications: { fromUser: username },
+          followRequests: { fromUsername: username },
+        }
+      });
+    } catch (e) { console.error('[CLEANUP userRels]', e.message); }
+
+    try {
+      await Post.updateMany({ likedBy: username }, { $pull: { likedBy: username }, $inc: { likes: -1 } });
+      await Post.updateMany({}, { $pull: { upvotedBy: username, downvotedBy: username } });
+      await Comment.updateMany({}, { $pull: { likedBy: username, upvotedBy: username, downvotedBy: username } });
+      await Community.updateMany({}, { $pull: { members: { username } } });
+    } catch (e) { console.error('[CLEANUP postRels]', e.message); }
+
+    console.log('[DELETE ACCOUNT] cleanup complete, sending success');
     res.json({ success: true, message: 'Account and all associated data deleted permanently' });
   } catch (err) {
-    console.error('[DELETE ACCOUNT] error:', err.message);
+    console.error('[DELETE ACCOUNT] error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1886,7 +1882,7 @@ app.get('/api/users/:username/posts', async (req, res) => {
     const { username } = req.params;
     const { currentUsername } = req.query;
 
-    const posts = await Post.find({ username, type: { $in: ['post', 'discussion'] } })
+    const posts = await Post.find({ username, type: { $in: ['post'] } })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -2110,6 +2106,8 @@ app.get('/api/posts/discussions', async (req, res) => {
       });
     } else if (userInterests.length > 0) {
       discussions = discussions.filter(d => {
+        // Always include the requesting user's own discussions
+        if (username && d.username === username) return true;
         const text = [d.title, d.content, ...(d.tags || [])].filter(Boolean).join(' ').toLowerCase();
         for (const { interest, keywords } of INTEREST_KEYWORDS) {
           if (!userInterests.includes(interest)) continue;
@@ -2783,11 +2781,12 @@ app.patch('/api/notifications/:id/read', async (req, res) => {
 
 app.patch('/api/user/settings', async (req, res) => {
   try {
-    const { username, interests, blockedInterests, feedPreference } = req.body;
+    const { username, interests, blockedInterests, feedPreference, discoverWidgets } = req.body;
     const update = {};
     if (interests !== undefined) update.interests = interests;
     if (blockedInterests !== undefined) update.blockedInterests = blockedInterests;
     if (feedPreference !== undefined) update.feedPreference = feedPreference;
+    if (discoverWidgets !== undefined) update.discoverWidgets = discoverWidgets;
     const user = await User.findOneAndUpdate(
       { username },
       { $set: update },

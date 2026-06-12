@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, LogOut, Shield, Sliders, Palette, Heart, Bookmark, Layers, Activity, MessageCircle, UserPlus, Eye, List, Ban, Users, Clock, Trash2, AlertTriangle, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, LogOut, Shield, Sliders, Palette, Heart, Bookmark, Layers, Activity, MessageCircle, UserPlus, Eye, List, Ban, Users, Clock, Trash2, AlertTriangle, X, Layout } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const menuItems = [
   { id: 'close-friends', label: 'Close Friends', desc: 'Stories visible only to your closest connections', icon: Users, path: '/settings/close-friends' },
   { id: 'privacy', label: 'Profile Privacy', desc: 'Manage visibility and follow access', icon: Shield, path: '/settings/privacy' },
   { id: 'interests', label: 'Edit Interests', desc: 'Topics you care about', icon: Layers, path: '/settings/interests' },
+  { id: 'discover', label: 'Customize Discover', desc: 'Show, hide, and pin widgets', icon: Layout, path: '/settings/discover' },
   { id: 'feed', label: 'Feed Control', desc: 'Content preferences and sorting', icon: Sliders, path: '/settings/feed' },
   { id: 'appearance', label: 'Appearance', desc: 'Theme and display settings', icon: Palette, path: '/settings/appearance' },
   { id: 'blocked', label: 'Blocked Users', desc: 'Manage blocked accounts', icon: Ban, path: '/settings/blocked' },
@@ -61,7 +62,8 @@ export default function Settings() {
   };
 
   const myActivity = user ? [
-    { type: 'posts', count: (allPosts || []).filter(p => p.username === user.username).length, label: 'Posts', icon: List },
+    { type: 'posts', count: (allPosts || []).filter(p => p.username === user.username && p.type !== 'discussion').length, label: 'Posts', icon: List },
+    { type: 'discussions', count: (allPosts || []).filter(p => p.username === user.username && p.type === 'discussion').length, label: 'Discussions', icon: MessageCircle },
     { type: 'likes', count: (allPosts || []).filter(p => p.likedBy?.includes(user.username)).length, label: 'Likes Given', icon: Heart },
     { type: 'comments', count: (allComments || []).filter(c => c.username === user.username).length, label: 'Comments', icon: MessageCircle },
     { type: 'followers', count: user.followers?.length || 0, label: 'Followers', icon: UserPlus },
@@ -91,7 +93,7 @@ export default function Settings() {
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}><div style={{ display: 'inline-block', width: '20px', height: '20px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
               {myActivity.map(item => (
                 <div key={item.type} style={{ padding: '12px 8px', textAlign: 'center' }}>
                   <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-color)' }}>{item.count}</div>
@@ -140,10 +142,10 @@ export default function Settings() {
             <span>RECENT ACTIVITY</span>
           </div>
           <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
-            {['all', 'posts', 'likes', 'comments'].map(tab => (
+            {['all', 'discussions', 'posts', 'likes', 'comments'].map(tab => (
               <button key={tab} onClick={() => setActivityTab(tab)}
                 style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: activityTab === tab ? 'var(--text-color)' : 'var(--surface-alt)', color: activityTab === tab ? 'var(--active-text)' : 'var(--text-secondary)', transition: 'all 0.15s' }}>
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab === 'discussions' ? 'Discussions' : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
@@ -152,8 +154,16 @@ export default function Settings() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}><div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>
             ) : (
               <>
-                {activityTab === 'all' || activityTab === 'posts' ? (
-                  (allPosts || []).filter(p => p.username === user?.username).slice(0, 3).map(p => (
+                {(activityTab === 'all' || activityTab === 'discussions') ? (
+                  (allPosts || []).filter(p => p.username === user?.username && p.type === 'discussion').slice(0, 3).map(d => (
+                    <div key={d._id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border-color)', fontSize: '13px', color: 'var(--text-color)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Discussed:</span> {d.title || d.content?.slice(0, 60)}{d.content?.length > 60 ? '...' : ''}
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>{new Date(d.createdAt).toLocaleDateString()}</div>
+                    </div>
+                  ))
+                ) : null}
+                {(activityTab === 'all' || activityTab === 'posts') ? (
+                  (allPosts || []).filter(p => p.username === user?.username && p.type !== 'discussion').slice(0, 3).map(p => (
                     <div key={p._id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border-color)', fontSize: '13px', color: 'var(--text-color)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Posted:</span> {p.title || p.content?.slice(0, 60)}{p.content?.length > 60 ? '...' : ''}
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>{new Date(p.createdAt).toLocaleDateString()}</div>

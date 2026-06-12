@@ -30,6 +30,7 @@ import CloseFriends from './pages/CloseFriends'
 import Followers from './pages/Followers'
 import Following from './pages/Following'
 import BlockedUsers from './pages/BlockedUsers'
+import CustomizeDiscover from './pages/CustomizeDiscover'
 import PostPage from './pages/PostPage'
 
 
@@ -84,6 +85,7 @@ function AppROUTES() {
         <Route path="/settings/saved" element={<Saved />} />
         <Route path="/settings/close-friends" element={<CloseFriends />} />
         <Route path="/settings/blocked" element={<BlockedUsers />} />
+        <Route path="/settings/discover" element={<CustomizeDiscover />} />
         <Route path="/post/:id" element={<PostPage />} />
       </Route>
 

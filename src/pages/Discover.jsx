@@ -348,127 +348,159 @@ export default function Discover() {
           )}
         </div>
       ) : (
-        /* Normal Discover content — unchanged */
         <div className="discover-grid">
-          {/* WIDGET 1: Suggested Connections */}
-          <div className="discover-widget" onClick={() => navigate('/discover/connections')} style={{ cursor: 'pointer' }}>
-            <div className="discover-widget-header">
-              <Users size={20} color="var(--text-color)" />
-              <span className="discover-widget-title" style={{ flex: 1 }}>Suggested Connections</span>
-            </div>
-            {suggestedUsers.length === 0 ? (
-              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
-                No suggestions yet — follow more people to get recommendations
-              </div>
-            ) : (
-              <div className="scroll-row">
-                {suggestedUsers.map(u => (
-                  <div key={u._id || u.username} className="scroll-card" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${u.username}`); }}>
-                    <Avatar username={u.username} image={u.profilePhoto} size={56} />
-                    <div style={{ textAlign: 'center', width: '100%', overflow: 'hidden' }}>
-                      <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name || u.username}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u._suggestionLabel}</div>
-                    </div>
-                    <button
-                      onClick={(e) => handleFollow(e, u.username)}
-                      style={{ width: '100%', padding: '6px 0', backgroundColor: user?.following?.includes(u.username) ? 'var(--border-color)' : (u.hasPendingRequest ? 'var(--border-color)' : 'var(--text-color)'), border: 'none', borderRadius: '6px', color: user?.following?.includes(u.username) || u.hasPendingRequest ? 'var(--text-secondary)' : 'var(--active-text)', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}
-                    >
-                      {user?.following?.includes(u.username) ? 'Following' : (u.hasPendingRequest ? 'Requested' : 'Follow')}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {(() => {
+            const ws = user?.discoverWidgets || [];
+            const gw = id => ws.find(w => w.id === id) || { visible: true, pinned: false };
+            const visible = ['suggestedConnections', 'interestPosts', 'activeDiscussions', 'interestHubs']
+              .map(id => ({ id, pinned: gw(id).pinned }))
+              .filter(({ id }) => gw(id).visible)
+              .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
 
-          {/* WIDGET 2: Shared Interest Posts */}
-          <div className="discover-widget" onClick={() => navigate('/discover/posts')} style={{ cursor: 'pointer' }}>
-            <div className="discover-widget-header">
-              <MessageSquare size={20} color="var(--text-color)" />
-              <span className="discover-widget-title" style={{ flex: 1 }}>Shared Interest Posts</span>
-            </div>
-            {interestPosts.length === 0 ? (
-              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
-                No posts match your interests yet
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {interestPosts.slice(0, 4).map(post => (
-                  <div key={post._id} style={{ display: 'flex', gap: '12px', padding: '8px', borderRadius: '8px', cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); navigate(`/discussion/${post._id}`); }}>
-                    <Avatar username={post.username} image={post.profilePhoto} size={36} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)' }}>{post.username}</div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-color)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.content || '📸 Photo post'}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>{post.likes} likes · {post.comments} comments</div>
-                    </div>
-                    {post.image && <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--border-color)', flexShrink: 0, overflow: 'hidden' }}><img src={post.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            if (visible.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.8' }}>
+                  Your Discover page is currently empty.<br />
+                  Enable widgets in:<br />
+                  <span style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--text-color)' }} onClick={() => navigate('/settings/discover')}>Settings → Customize Discover</span>
+                </div>
+              );
+            }
 
-          {/* WIDGET 3: Active Discussions */}
-          <div className="discover-widget" onClick={() => navigate('/discussions')} style={{ cursor: 'pointer' }}>
-            <div className="discover-widget-header">
-            <MessageCircle size={20} color="var(--text-color)" />
-            <span className="discover-widget-title">Active Discussions</span>
-          </div>
-            {discussions.length === 0 ? (
-              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
-                <MessageCircle size={32} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
-                No active discussions yet.<br />
-                Start a conversation and build your community.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {discussions.slice(0, 4).map(d => (
-                  <div key={d._id} className="discover-widget-row" onClick={(e) => { e.stopPropagation(); navigate(`/discussion/${d._id}`); }}>
-                    <Avatar username={d.username} size={22} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--text-color)', marginBottom: '4px' }}>{d.title || 'Untitled discussion'}</div>
-                      <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', alignItems: 'center' }}>
-                        <span>{d.username}</span>
-                        <span>·</span>
-                        <span>{timeAgo(d.createdAt)}</span>
+            return visible.map(({ id }) => {
+              switch (id) {
+                case 'suggestedConnections':
+                  return (
+                    <div key="suggestedConnections" className="discover-widget" onClick={() => navigate('/discover/connections')} style={{ cursor: 'pointer' }}>
+                      <div className="discover-widget-header">
+                        <Users size={20} color="var(--text-color)" />
+                        <span className="discover-widget-title" style={{ flex: 1 }}>Suggested Connections</span>
                       </div>
+                      {suggestedUsers.length === 0 ? (
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
+                          No suggestions yet — follow more people to get recommendations
+                        </div>
+                      ) : (
+                        <div className="scroll-row">
+                          {suggestedUsers.map(u => (
+                            <div key={u._id || u.username} className="scroll-card" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${u.username}`); }}>
+                              <Avatar username={u.username} image={u.profilePhoto} size={56} />
+                              <div style={{ textAlign: 'center', width: '100%', overflow: 'hidden' }}>
+                                <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name || u.username}</div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u._suggestionLabel}</div>
+                              </div>
+                              <button
+                                onClick={(e) => handleFollow(e, u.username)}
+                                style={{ width: '100%', padding: '6px 0', backgroundColor: user?.following?.includes(u.username) ? 'var(--border-color)' : (u.hasPendingRequest ? 'var(--border-color)' : 'var(--text-color)'), border: 'none', borderRadius: '6px', color: user?.following?.includes(u.username) || u.hasPendingRequest ? 'var(--text-secondary)' : 'var(--active-text)', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}
+                              >
+                                {user?.following?.includes(u.username) ? 'Following' : (u.hasPendingRequest ? 'Requested' : 'Follow')}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-color)', fontWeight: 500 }}>{d.comments} {d.comments === 1 ? 'reply' : 'replies'}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  );
 
-          {/* WIDGET 4: Interest Hubs */}
-          <div className="discover-widget" onClick={() => navigate('/hubs')} style={{ cursor: 'pointer' }}>
-            <div className="discover-widget-header">
-              <span style={{ fontSize: '20px' }}>🏠</span>
-              <span className="discover-widget-title" style={{ flex: 1 }}>Interest Hubs</span>
-            </div>
-            {hubs.length === 0 ? (
-              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
-                No hubs available yet — seed them from the server
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {hubs.slice(0, 4).map(hub => (
-                  <div
-                    key={hub._id}
-                    className="discover-widget-row"
-                    onClick={(e) => { e.stopPropagation(); navigate(`/hubs?hub=${hub._id}`); }}
-                  >
-                    <span style={{ fontSize: '22px' }}>{hub.icon}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-color)' }}>{hub.name}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{hub.description}</div>
+                case 'interestPosts':
+                  return (
+                    <div key="interestPosts" className="discover-widget" onClick={() => navigate('/discover/posts')} style={{ cursor: 'pointer' }}>
+                      <div className="discover-widget-header">
+                        <MessageSquare size={20} color="var(--text-color)" />
+                        <span className="discover-widget-title" style={{ flex: 1 }}>Shared Interest Posts</span>
+                      </div>
+                      {interestPosts.length === 0 ? (
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
+                          No posts match your interests yet
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {interestPosts.slice(0, 4).map(post => (
+                            <div key={post._id} style={{ display: 'flex', gap: '12px', padding: '8px', borderRadius: '8px', cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); navigate(`/discussion/${post._id}`); }}>
+                              <Avatar username={post.username} image={post.profilePhoto} size={36} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)' }}>{post.username}</div>
+                                <div style={{ fontSize: '13px', color: 'var(--text-color)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.content || '📸 Photo post'}</div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>{post.likes} likes · {post.comments} comments</div>
+                              </div>
+                              {post.image && <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--border-color)', flexShrink: 0, overflow: 'hidden' }}><img src={post.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  );
 
-          </div>
+                case 'activeDiscussions':
+                  return (
+                    <div key="activeDiscussions" className="discover-widget" onClick={() => navigate('/discussions')} style={{ cursor: 'pointer' }}>
+                      <div className="discover-widget-header">
+                        <MessageCircle size={20} color="var(--text-color)" />
+                        <span className="discover-widget-title">Active Discussions</span>
+                      </div>
+                      {discussions.length === 0 ? (
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
+                          <MessageCircle size={32} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
+                          No active discussions yet.<br />
+                          Start a conversation and build your community.
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {discussions.slice(0, 4).map(d => (
+                            <div key={d._id} className="discover-widget-row" onClick={(e) => { e.stopPropagation(); navigate(`/discussion/${d._id}`); }}>
+                              <Avatar username={d.username} size={22} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--text-color)', marginBottom: '4px' }}>{d.title || 'Untitled discussion'}</div>
+                                <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', alignItems: 'center' }}>
+                                  <span>{d.username}</span>
+                                  <span>·</span>
+                                  <span>{timeAgo(d.createdAt)}</span>
+                                </div>
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-color)', fontWeight: 500 }}>{d.comments} {d.comments === 1 ? 'reply' : 'replies'}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+
+                case 'interestHubs':
+                  return (
+                    <div key="interestHubs" className="discover-widget" onClick={() => navigate('/hubs')} style={{ cursor: 'pointer' }}>
+                      <div className="discover-widget-header">
+                        <span style={{ fontSize: '20px' }}>🏠</span>
+                        <span className="discover-widget-title" style={{ flex: 1 }}>Interest Hubs</span>
+                      </div>
+                      {hubs.length === 0 ? (
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
+                          No hubs available yet — seed them from the server
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {hubs.slice(0, 4).map(hub => (
+                            <div
+                              key={hub._id}
+                              className="discover-widget-row"
+                              onClick={(e) => { e.stopPropagation(); navigate(`/hubs?hub=${hub._id}`); }}
+                            >
+                              <span style={{ fontSize: '22px' }}>{hub.icon}</span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-color)' }}>{hub.name}</div>
+                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{hub.description}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+
+                default:
+                  return null;
+              }
+            });
+          })()}
         </div>
       )}
     </div>

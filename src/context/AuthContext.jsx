@@ -20,6 +20,7 @@ function storeUserEssentials(user) {
       profilePhoto: user.profilePhoto,
       interests: user.interests,
       isPrivate: user.isPrivate,
+      discoverWidgets: user.discoverWidgets,
     };
     localStorage.setItem('currentUser', JSON.stringify(essentialUser));
   } catch (err) {
@@ -83,13 +84,13 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('currentUser');
   };
 
-  const updateUserSettings = async ({ interests, blockedInterests, feedPreference }) => {
+  const updateUserSettings = async ({ interests, blockedInterests, feedPreference, discoverWidgets }) => {
     if (!user) return;
     try {
       const res = await fetch(`/api/user/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user.username, interests, blockedInterests, feedPreference })
+        body: JSON.stringify({ username: user.username, interests, blockedInterests, feedPreference, discoverWidgets })
       });
       if (res.ok) {
         const updatedUser = await res.json();
