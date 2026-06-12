@@ -494,61 +494,63 @@ export default function Profile() {
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Posts will appear here once shared.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '2px',
+            width: '100%',
+          }}>
             {userPosts.map((post, idx) => (
-              <div key={idx} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.15s ease' }}
-                onClick={() => setSelectedPost(post)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px' }}>
-                  <Avatar username={post.username} size={34} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-color)' }}>{post.username}</div>
-                    {post.createdAt && (
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '1px' }}>
-                        {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </div>
-                    )}
+              <div
+                key={post._id || idx}
+                onClick={() => setSelectedPost(post)}
+                style={{
+                  position: 'relative',
+                  paddingBottom: '100%',
+                  backgroundColor: 'var(--surface-alt)',
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                }}
+              >
+                {post.image ? (
+                  <img
+                    src={post.image}
+                    alt=""
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '8px',
+                    gap: '4px',
+                  }}>
+                    <MessageCircle size={18} color="var(--text-secondary)" />
+                    <span style={{
+                      fontSize: '11px',
+                      color: 'var(--text-secondary)',
+                      textAlign: 'center',
+                      lineHeight: '1.4',
+                      overflow: 'hidden',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                    }}>
+                      {post.content}
+                    </span>
                   </div>
-                  {isOwnProfile && (
-                    <div style={{ position: 'relative' }}>
-                      <button onClick={(e) => { e.stopPropagation(); setMenuPostId(menuPostId === post._id ? null : post._id); }}
-                        style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}>
-                        <MoreHorizontal size={18} />
-                      </button>
-                      {menuPostId === post._id && (
-                        <>
-                          <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setMenuPostId(null)} />
-                          <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 51, backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', minWidth: '150px', overflow: 'hidden' }}>
-                            <button onClick={(e) => { e.stopPropagation(); setMenuPostId(null); setDeleteTargetId(post._id); }}
-                              style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: 500 }}>
-                              Delete Post
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {post.content && (
-                  <div style={{ padding: '0 16px 12px', fontSize: '13px', color: 'var(--text-color)', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{post.content}</div>
                 )}
-
-                {post.image && (
-                  <div style={{ borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
-                    <img src={post.image} alt="" style={{ width: '100%', display: 'block', maxHeight: '400px', objectFit: 'cover' }} />
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '16px', padding: '12px 16px', borderTop: '1px solid var(--border-color)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '12px' }}>
-                    <Heart size={14} />
-                    <span>{post.likes || 0}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '12px' }}>
-                    <MessageCircle size={14} />
-                    <span>{post.comments || 0}</span>
-                  </div>
-                </div>
               </div>
             ))}
           </div>

@@ -525,7 +525,15 @@ export default function Home() {
             {(() => {
               const myStories = stories.filter(s => s.author === user?.username);
               const firstStory = myStories[0];
-              return (
+  if (loading) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', zIndex: 100 }}>
+        <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid var(--border-color)', borderTopColor: 'var(--text-color)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    );
+  }
+
+  return (
                 <>
                   <div className="story-circle" style={{ position: 'relative' }}>
                     <div className="story-circle-inner" style={firstStory ? { backgroundImage: `url(${firstStory.media})` } : { display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)' }}>

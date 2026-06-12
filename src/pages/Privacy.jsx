@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Eye, Camera, Sparkles, Lock, Globe, ChevronRight, Heart } from 'lucide-react';
+import { ArrowLeft, Eye, Camera, Sparkles, Lock, Globe, ChevronRight, Heart, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const VISIBILITY_OPTIONS = [
   { value: 'everyone', label: 'Everyone', desc: 'All users can see this' },
   { value: 'followers', label: 'Followers Only', desc: 'Only your followers can see this' },
+  { value: 'nobody', label: 'Nobody', desc: 'Hidden from everyone' },
 ];
 
 const ACCOUNT_OPTIONS = [
@@ -16,6 +17,8 @@ const ACCOUNT_OPTIONS = [
 const SECTIONS = [
   { id: 'photoVisibility', label: 'Profile Picture Visibility', icon: Camera },
   { id: 'interestVisibility', label: 'Interest Tag Visibility', icon: Sparkles },
+  { id: 'followersVisibility', label: 'Followers List Visibility', icon: Users },
+  { id: 'followingVisibility', label: 'Following List Visibility', icon: Users },
 ];
 
 export default function Privacy() {
@@ -26,6 +29,8 @@ export default function Privacy() {
   const [settings, setSettings] = useState({
     photoVisibility: user?.photoVisibility || 'everyone',
     interestVisibility: user?.interestVisibility || 'everyone',
+    followersVisibility: user?.followersVisibility || 'everyone',
+    followingVisibility: user?.followingVisibility || 'everyone',
   });
   const [updating, setUpdating] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
@@ -36,6 +41,8 @@ export default function Privacy() {
       setSettings({
         photoVisibility: user.photoVisibility || 'everyone',
         interestVisibility: user.interestVisibility || 'everyone',
+        followersVisibility: user.followersVisibility || 'everyone',
+        followingVisibility: user.followingVisibility || 'everyone',
       });
     }
   }, [user]);
@@ -87,7 +94,7 @@ export default function Privacy() {
         )}
 
         <div style={{ padding: '14px 16px', backgroundColor: 'var(--surface-alt)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-          Manage your account privacy. When your account is private, only approved followers can see your posts and stories. Profile photo and interest tags have their own independent visibility controls.
+          Manage your account privacy. When your account is private, only approved followers can see your posts and stories. Profile photo, interest tags, and follower/following lists have their own independent visibility controls.
         </div>
 
         {/* Close Friends link */}

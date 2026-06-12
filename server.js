@@ -139,7 +139,9 @@ const UserSchema = new mongoose.Schema({
     default: null
   },
   photoVisibility: { type: String, enum: ['everyone', 'followers'], default: 'everyone' },
-  interestVisibility: { type: String, enum: ['everyone', 'followers'], default: 'everyone' },
+  interestVisibility: { type: String, enum: ['everyone', 'followers', 'nobody'], default: 'everyone' },
+  followersVisibility: { type: String, enum: ['everyone', 'followers', 'nobody'], default: 'everyone' },
+  followingVisibility: { type: String, enum: ['everyone', 'followers', 'nobody'], default: 'everyone' },
   isPrivate: { type: Boolean, default: false },
   feedPreference: { type: String, default: 'Friends', enum: ['Balanced', 'Friends', 'Suggested'] },
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
@@ -843,8 +845,19 @@ app.get('/api/users/:username', async (req, res) => {
         user.profilePhoto = '';
       }
       // Interest visibility
-      if ((user.interestVisibility || 'everyone') === 'followers' && !isFollower) {
+      const iv = user.interestVisibility || 'everyone';
+      if (iv === 'nobody' || (iv === 'followers' && !isFollower)) {
         user.interests = [];
+      }
+      // Followers visibility
+      const fv = user.followersVisibility || 'everyone';
+      if (fv === 'nobody' || (fv === 'followers' && !isFollower)) {
+        user.followers = [];
+      }
+      // Following visibility
+      const fov = user.followingVisibility || 'everyone';
+      if (fov === 'nobody' || (fov === 'followers' && !isFollower)) {
+        user.following = [];
       }
     }
     res.json(user);
