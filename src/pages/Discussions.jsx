@@ -5,6 +5,29 @@ import { ArrowLeft, Plus, MessageCircle, X, Send, BarChart3, MoreHorizontal, Tra
 import Avatar from '../components/Avatar';
 import ConfirmModal from '../components/ConfirmModal';
 
+const INTEREST_KEYWORDS = [
+  { interest: 'Gaming', keywords: ['game', 'games', 'gaming', 'gamer'] },
+  { interest: 'Music', keywords: ['music', 'musician', 'song', 'songs', 'artist', 'album'] },
+  { interest: 'Art', keywords: ['art', 'artist', 'drawing', 'sketch', 'painting', 'digital art'] },
+  { interest: 'Fashion', keywords: ['fashion', 'style', 'outfit', 'clothing', 'streetwear'] },
+  { interest: 'Travel', keywords: ['travel', 'traveling', 'trip', 'vacation', 'wanderlust'] },
+  { interest: 'Food', keywords: ['food', 'cooking', 'recipe', 'baking', 'cuisine'] },
+  { interest: 'Fitness', keywords: ['fitness', 'workout', 'exercise', 'gym', 'training'] },
+  { interest: 'Sports', keywords: ['sports', 'sport', 'athlete', 'team', 'game', 'match'] },
+  { interest: 'Technology', keywords: ['tech', 'technology', 'coding', 'programming', 'software', 'ai', 'computer'] },
+  { interest: 'Science', keywords: ['science', 'scientific', 'research', 'experiment', 'biology', 'physics', 'chemistry'] },
+  { interest: 'Reading', keywords: ['reading', 'book', 'books', 'novel', 'literature', 'author'] },
+  { interest: 'Writing', keywords: ['writing', 'writer', 'author', 'poetry', 'story', 'blog'] },
+  { interest: 'Movies', keywords: ['movie', 'movies', 'film', 'cinema', 'hollywood'] },
+  { interest: 'TV Shows', keywords: ['tv', 'television', 'show', 'shows', 'netflix', 'series'] },
+  { interest: 'Anime', keywords: ['anime', 'manga', 'japanese', 'otaku'] },
+  { interest: 'Photography', keywords: ['photography', 'photographer', 'photo', 'camera', 'photoshoot'] },
+  { interest: 'Nature', keywords: ['nature', 'outdoor', 'wildlife', 'garden', 'plant', 'environment'] },
+  { interest: 'Pets', keywords: ['pet', 'pets', 'dog', 'cat', 'animal', 'animals'] },
+  { interest: 'Education', keywords: ['education', 'learning', 'study', 'student', 'school', 'college', 'university'] },
+  { interest: 'Business', keywords: ['business', 'entrepreneur', 'startup', 'finance', 'career', 'economy', 'marketing'] }
+];
+
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
@@ -35,7 +58,7 @@ export default function Discussions() {
   const [sortMode, setSortMode] = useState('trending');
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState([]);
   const fileInputRef = useRef(null);
 
   const handleDelete = async (postId) => {
@@ -103,8 +126,7 @@ export default function Discussions() {
     try {
       const body = { username: user.username, title: title.trim(), content: content.trim(), type: 'discussion' };
       if (imagePreview) body.image = imagePreview;
-      const tagList = tags.split(/[,\s]+/).filter(Boolean);
-      if (tagList.length > 0) body.tags = tagList;
+      if (tags.length > 0) body.tags = tags;
       if (pollMode) {
         const options = pollOptions.filter(o => o.trim()).map(text => ({ text: text.trim(), votes: 0, voters: [] }));
         if (options.length < 2) { setError('Add at least 2 poll options'); setCreating(false); return; }
@@ -121,7 +143,7 @@ export default function Discussions() {
         setContent('');
         setPollMode(false);
         setPollOptions(['', '']);
-        setTags('');
+        setTags([]);
         await fetchDiscussions();
       } else {
         const data = await res.json().catch(() => ({}));
@@ -364,9 +386,27 @@ export default function Discussions() {
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                 <Hash size={14} color="var(--text-secondary)" />
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>Tags (comma-separated)</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>Tags</span>
               </div>
-              <input className="form-input" placeholder="e.g. coding, react, webdev" value={tags} onChange={e => setTags(e.target.value)} />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {INTEREST_KEYWORDS.map(({ interest }) => {
+                  const active = tags.includes(interest);
+                  return (
+                    <button key={interest} type="button" onClick={() => {
+                      setTags(prev => prev.includes(interest) ? prev.filter(t => t !== interest) : [...prev, interest]);
+                    }}
+                      style={{
+                        padding: '6px 14px', borderRadius: '20px', border: `1px solid ${active ? 'var(--text-color)' : 'var(--border-color)'}`,
+                        backgroundColor: active ? 'var(--surface-alt)' : 'transparent',
+                        color: 'var(--text-color)', fontSize: '12px', fontWeight: active ? 600 : 500,
+                        cursor: 'pointer', transition: 'all 0.15s',
+                      }}
+                    >
+                      {interest}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Image upload */}
