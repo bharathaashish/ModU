@@ -219,9 +219,10 @@ function canViewInterests(user, viewerUsername) {
 
 function filterBlockedInterests(items, blockedInterests) {
   if (!blockedInterests || blockedInterests.length === 0) return items;
+  const blocked = blockedInterests.map(b => b.toLowerCase().replace(/^#/, ''));
   return items.filter(item => {
-    const tags = item.tags || [];
-    return !tags.some(tag => blockedInterests.includes(tag));
+    const tags = (item.tags || []).map(t => t.toLowerCase().replace(/^#/, ''));
+    return !tags.some(tag => blocked.includes(tag));
   });
 }
 

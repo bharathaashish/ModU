@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start:server": "node --watch server.js",
-    "dev:ui": "vite",
+    "start:server": "node --max-http-header-size=65536 --watch server.js",
+    "dev:ui": "node --max-http-header-size=65536 ./node_modules/.bin/vite",
     "dev": "concurrently \"npm run start:server\" \"npm run dev:ui\"",
     "build": "vite build",
     "lint": "eslint .",
