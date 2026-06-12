@@ -57,8 +57,8 @@ export default function Register() {
       setError('Password must be at least 6 characters');
       return;
     }
-    if (Number(age) < 13 || Number(age) > 120) {
-      setError('Please provide a valid age (13+)');
+    if (!age || Number(age) < 12 || Number(age) > 120) {
+      setError('Please provide a valid age (12+)');
       return;
     }
     if (phone.length < 7) {
@@ -146,9 +146,14 @@ export default function Register() {
               className="input"
               style={{ width: '30%' }}
               value={age}
-              onChange={(e) => setAge(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '' || (Number(val) >= 0 && Number(val) <= 120)) {
+                  setAge(val);
+                }
+              }}
               required
-              min="13"
+              min="12"
               max="120"
             />
             <input

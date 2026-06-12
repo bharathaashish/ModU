@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function FeedControl() {
@@ -31,8 +31,8 @@ export default function FeedControl() {
 
       <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column' }}>
         {savedMsg && (
-          <div style={{ padding: '12px', backgroundColor: 'var(--surface-alt)', color: 'var(--text-color)', borderRadius: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 500, marginBottom: '24px' }}>
-            {savedMsg}
+          <div style={{ padding: '12px 16px', backgroundColor: 'var(--success-bg, #e6f4ea)', border: '1.5px solid var(--success-border, #4caf50)', borderRadius: '8px', color: 'var(--success-text, #1e7e34)', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+            <CheckCircle2 size={16} /> {savedMsg}
           </div>
         )}
 

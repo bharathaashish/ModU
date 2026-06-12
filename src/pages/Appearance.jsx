@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, CheckCircle2 } from 'lucide-react';
 
 const FONT_SIZES = [
   { id: 'small', label: 'Small' },
@@ -78,8 +78,8 @@ export default function Appearance() {
       </div>
 
       {savedMsg && (
-        <div style={{ padding: '12px 16px', textAlign: 'center', fontSize: 'var(--fs-xs)', color: 'var(--text-color)', fontWeight: 500, borderBottom: '0.5px solid var(--divider-color)' }}>
-          {savedMsg}
+        <div style={{ padding: '12px 16px', backgroundColor: 'var(--success-bg, #e6f4ea)', border: '1.5px solid var(--success-border, #4caf50)', borderRadius: '8px', color: 'var(--success-text, #1e7e34)', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 16px 0' }}>
+          <CheckCircle2 size={16} /> {savedMsg}
         </div>
       )}
 

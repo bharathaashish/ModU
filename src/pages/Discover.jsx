@@ -201,7 +201,10 @@ export default function Discover() {
           fetch(`/api/users/search?q=${encodeURIComponent(query.trim())}&currentUsername=${encodeURIComponent(user?.username || '')}`),
           fetch(`/api/communities/search?q=${encodeURIComponent(query.trim())}`)
         ]);
-        if (usersRes.ok) setUserResults(await usersRes.json());
+        if (usersRes.ok) {
+          const results = await usersRes.json();
+          setUserResults(results.filter(u => u.username !== user?.username));
+        }
         if (commsRes.ok) setCommunityResults(await commsRes.json());
       } catch {}
       setSearching(false);

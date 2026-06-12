@@ -67,7 +67,7 @@ export default function EditInterests() {
 
       <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {savedMsg && (
-          <div style={{ padding: '12px 16px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-color)', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ padding: '12px 16px', backgroundColor: 'var(--success-bg, #e6f4ea)', border: '1.5px solid var(--success-border, #4caf50)', borderRadius: '8px', color: 'var(--success-text, #1e7e34)', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Check size={18} /> {savedMsg}
           </div>
         )}

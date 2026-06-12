@@ -702,6 +702,13 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ message: 'Username must be at least 3 characters' });
     }
 
+    if (age !== undefined && age !== null && age !== '') {
+      const ageNum = Number(age);
+      if (isNaN(ageNum) || ageNum < 12 || ageNum > 120) {
+        return res.status(400).json({ message: 'Please provide a valid age (12+)' });
+      }
+    }
+
     let user = await User.findOne({ username });
     if (user) return res.status(400).json({ message: 'Username already taken' });
 

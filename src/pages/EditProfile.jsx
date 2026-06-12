@@ -174,7 +174,7 @@ export default function EditProfile() {
       <div style={{ maxWidth: '520px', margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {/* Messages */}
         {error && <div style={{ padding: '10px 14px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '13px' }}>{error}</div>}
-        {saved && <div style={{ padding: '10px 14px', backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-color)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {saved && <div style={{ padding: '12px 16px', backgroundColor: 'var(--success-bg, #e6f4ea)', border: '1.5px solid var(--success-border, #4caf50)', borderRadius: '8px', color: 'var(--success-text, #1e7e34)', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
           <CheckCircle2 size={16} /> Profile saved
         </div>}
 
