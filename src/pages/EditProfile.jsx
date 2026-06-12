@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, Save, User, Mail, Phone, Calendar, FileText, AtSign, Camera, CheckCircle2, Trash2 } from 'lucide-react';
@@ -28,6 +28,22 @@ export default function EditProfile() {
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropImage, setCropImage] = useState(null);
   const [cropMeta, setCropMeta] = useState(null);
+
+  useEffect(() => {
+    if (!user?.username) return;
+    fetch(`/api/users/${user.username}?currentUsername=${user.username}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data) return;
+        setName(data.name || '');
+        setUsername(data.username || '');
+        setEmail(data.email || '');
+        setAge(data.age || '');
+        setPhone(data.phone || '');
+        setBio(data.bio || '');
+      })
+      .catch(() => {});
+  }, [user?.username]);
 
   const validateUsername = useCallback((val) => {
     if (val.length > 0 && !USERNAME_REGEX.test(val)) {
