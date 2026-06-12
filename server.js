@@ -40,15 +40,15 @@ passport.deserializeUser(async (username, done) => {
   }
 });
 
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} body:`, JSON.stringify(req.body || {}).slice(0, 200));
-  next();
-});
-
 // Set up MongoDB Connection
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
 
-mongoose.connect(MONGO_URI, { bufferCommands: false })
+mongoose.connect(MONGO_URI, {
+  bufferCommands: false,
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+})
 .then(async () => {
   console.log("Successfully connected to MongoDB");
   // Remove communities created by fake user 'modu_admin' or empty seeded placeholders
@@ -183,6 +183,10 @@ const UserSchema = new mongoose.Schema({
   hiddenConversations: [{ partner: String, hiddenAt: { type: Date, default: Date.now } }],
 });
 
+UserSchema.index({ username: 1 });
+UserSchema.index({ 'blockedUsers.username': 1 });
+UserSchema.index({ 'profileMutedUsers.username': 1 });
+
 // ── Visibility helper functions ──
 function canViewPhoto(user, viewerUsername) {
   if (!viewerUsername || !user) return false;
@@ -225,6 +229,12 @@ const PostSchema = new mongoose.Schema({
   },
   tags: [{ type: String }]
 }, { timestamps: true });
+
+PostSchema.index({ username: 1 });
+PostSchema.index({ type: 1 });
+PostSchema.index({ username: 1, type: 1 });
+PostSchema.index({ createdAt: -1 });
+PostSchema.index({ communityId: 1 });
 
 const VoteSchema = new mongoose.Schema({
   userId: { type: String, required: true },
@@ -272,6 +282,9 @@ const MessageSchema = new mongoose.Schema({
   editedAt: { type: Date },
   editHistory: [{ content: String, editedAt: Date }]
 });
+
+MessageSchema.index({ sender: 1, receiver: 1 });
+MessageSchema.index({ timestamp: -1 });
 
 const MessageRequestSchema = new mongoose.Schema({
   sender: { type: String, required: true },
@@ -627,7 +640,6 @@ app.get('/api/auth/google/callback', async (req, res, next) => {
   const { mock, name, email, googleId } = req.query;
   if (mock === 'true' && email) {
     try {
-      console.log(`[GOOGLE MOCK] Authenticating mock user: email=${email}, name=${name}`);
       let user = await User.findOne({ googleId });
       if (!user) {
         user = await User.findOne({ email });
@@ -650,7 +662,6 @@ app.get('/api/auth/google/callback', async (req, res, next) => {
           interests: [] // Triggers onboarding if empty
         });
         await user.save();
-        console.log(`[GOOGLE MOCK] Created user account: @${username}`);
       } else if (!user.googleId) {
         user.googleId = googleId;
         await user.save();
@@ -682,7 +693,6 @@ app.get('/api/auth/status', (req, res) => {
 // AUTH ROUTES
 app.post('/api/auth/register', async (req, res) => {
   try {
-    console.log("Registration Attempt Data:", req.body);
     const { username, name, password, email, age, phone } = req.body;
 
     if (!username || !USERNAME_REGEX.test(username)) {
@@ -706,7 +716,6 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    console.log("Login Attempt Data:", req.body);
     const { email, username, password } = req.body;
     const query = email ? { email } : username ? { username } : null;
     if (!query) return res.status(400).json({ message: 'Email or username required' });
@@ -762,7 +771,6 @@ app.get('/api/users', async (req, res) => {
 app.get('/api/users/search', async (req, res) => {
   try {
     const { q, currentUsername } = req.query;
-    console.log(`[SEARCH] query="${q}" cur="${currentUsername}"`);
     if (!q || !q.trim()) return res.json([]);
     const terms = q.trim().split(/\s+/).filter(Boolean);
     const conditions = [];
@@ -910,7 +918,6 @@ app.delete('/api/users/:username/photo', async (req, res) => {
 app.put('/api/users/:username', async (req, res) => {
   try {
     const { name, username: newUsername, email, age, phone, bio, interests, feedPreference, isPrivate } = req.body;
-    console.log(`[UPDATE] oldUsername="${req.params.username}", newUsername="${newUsername}", name="${name}"`);
 
     // Only set fields that were actually provided — skip undefined to avoid overwriting existing data
     const updateFields = {};
@@ -931,14 +938,11 @@ app.put('/api/users/:username', async (req, res) => {
       if (req.body.interestVisibility === undefined) updateFields.interestVisibility = 'followers';
     }
 
-    console.log(`[UPDATE] fields to set:`, JSON.stringify(updateFields));
-
     const oldUsername = req.params.username;
 
     // Validate new username format if changing
     if (newUsername !== undefined && newUsername !== oldUsername) {
       if (!newUsername || !USERNAME_REGEX.test(newUsername)) {
-        console.log(`[UPDATE] FAIL: username "${newUsername}" has invalid characters`);
         return res.status(400).json({ message: 'Username can only contain letters, numbers, underscores, and periods' });
       }
       if (newUsername.length < 3) {
@@ -948,10 +952,8 @@ app.put('/api/users/:username', async (req, res) => {
 
     // Handle username change — update everywhere it's referenced
     if (newUsername && newUsername !== oldUsername) {
-      console.log(`[UPDATE] username changing from "${oldUsername}" to "${newUsername}"`);
       const existingUser = await User.findOne({ username: newUsername });
       if (existingUser) {
-        console.log(`[UPDATE] FAIL: username "${newUsername}" already taken`);
         return res.status(400).json({ message: 'Username already taken' });
       }
 
@@ -987,10 +989,8 @@ app.put('/api/users/:username', async (req, res) => {
       { new: true }
     ).select('-password');
     if (!user) {
-      console.log(`[UPDATE] FAIL: user "${oldUsername}" not found after update`);
       return res.status(404).json({ message: 'User not found after update' });
     }
-    console.log(`[UPDATE] result:`, JSON.stringify({ _id: user._id, username: user.username, name: user.name }));
     res.json(user);
   } catch (err) {
     console.error('[UPDATE] error:', err.message);
@@ -1010,7 +1010,6 @@ app.post('/api/users/:username/follow', async (req, res) => {
     const targetBlockedByUser = (user.blockedUsers || []).find(b => b.username === targetUsername);
     const userBlockedByTarget = (target.blockedUsers || []).find(b => b.username === user.username);
     if (targetBlockedByUser || userBlockedByTarget) {
-      console.log(`[FOLLOW] blocked: user=${user.username} target=${targetUsername}`);
       return res.json(user); // Return unchanged user
     }
 
@@ -1023,13 +1022,10 @@ app.post('/api/users/:username/follow', async (req, res) => {
     const isFollowing = user.following.includes(targetUsername);
     const hasPendingRequest = target.followRequests?.some(r => r.fromUsername === user.username);
 
-    console.log(`[FOLLOW] user=${user.username} target=${targetUsername} isPrivate=${target.isPrivate} isFollowing=${isFollowing} hasRequest=${hasPendingRequest}`);
-
     if (isFollowing) {
       // UNFOLLOW
       await User.updateOne({ username: req.params.username }, { $pull: { following: targetUsername } });
       await User.updateOne({ username: targetUsername }, { $pull: { followers: req.params.username } });
-      console.log(`[FOLLOW] unfollowed ${targetUsername}`);
     } else if (hasPendingRequest) {
       // CANCEL pending request — also remove the notification
       await User.updateOne(
@@ -1040,7 +1036,6 @@ app.post('/api/users/:username/follow', async (req, res) => {
         { username: targetUsername },
         { $pull: { notifications: { type: 'follow_request', fromUser: user.username } } }
       );
-      console.log(`[FOLLOW] cancelled follow request to ${targetUsername}`);
     } else if (target.isPrivate) {
       // SEND follow request (private account) — atomically prevent duplicates
       const request = { fromUsername: user.username, timestamp: new Date() };
@@ -1053,7 +1048,6 @@ app.post('/api/users/:username/follow', async (req, res) => {
       );
 
       if (reqResult.modifiedCount > 0) {
-        console.log(`[FOLLOW] follow request sent to ${targetUsername}`);
 
         // Only add notification if it doesn't already exist
         const notification = {
@@ -1069,9 +1063,6 @@ app.post('/api/users/:username/follow', async (req, res) => {
           },
           { $push: { notifications: { $each: [notification], $position: 0 } } }
         );
-        console.log(`[FOLLOW] follow_request notification added for ${targetUsername}`);
-      } else {
-        console.log(`[FOLLOW] duplicate follow request blocked for ${targetUsername}`);
       }
     } else {
       // FOLLOW instantly (public account)
@@ -1089,11 +1080,9 @@ app.post('/api/users/:username/follow', async (req, res) => {
         { username: targetUsername },
         { $push: { notifications: { $each: [notification], $position: 0 } } }
       );
-      console.log(`[FOLLOW] instantly followed ${targetUsername}`);
     }
 
     const updatedUser = await User.findOne({ username: req.params.username }).lean();
-    console.log(`[FOLLOW] returning user with ${updatedUser.following?.length || 0} following`);
     res.json(updatedUser);
   } catch (err) {
     console.error('Follow error:', err);
@@ -1116,8 +1105,6 @@ app.post('/api/users/:username/follow-requests/accept', async (req, res) => {
     if (userBlocked || requesterBlocked) {
       return res.status(403).json({ error: 'Cannot accept follow request from a blocked user' });
     }
-
-    console.log(`[ACCEPT] ${req.params.username} accepting follow request from ${fromUsername}`);
 
     // Remove request, add follower/following, remove the follow_request notification
     await User.updateOne(
@@ -1150,7 +1137,6 @@ app.post('/api/users/:username/follow-requests/accept', async (req, res) => {
     );
 
     const updatedUser = await User.findOne({ username: req.params.username }).lean();
-    console.log(`[ACCEPT] done. ${req.params.username} now has ${updatedUser.followers?.length || 0} followers`);
     res.json(updatedUser);
   } catch (err) {
     console.error('Accept follow request error:', err);
@@ -1162,7 +1148,6 @@ app.post('/api/users/:username/follow-requests/accept', async (req, res) => {
 app.post('/api/users/:username/follow-requests/reject', async (req, res) => {
   try {
     const { fromUsername } = req.body;
-    console.log(`[REJECT] ${req.params.username} rejecting follow request from ${fromUsername}`);
 
     await User.updateOne(
       { username: req.params.username },
@@ -1791,56 +1776,67 @@ app.put('/api/messages/:messageId/edit', async (req, res) => {
   }
 });
 
+// GET USER POSTS — dedicated endpoint so the Profile page doesn't need to fetch the entire feed
+app.get('/api/users/:username/posts', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { currentUsername } = req.query;
+
+    const posts = await Post.find({ username, type: { $in: ['post', 'discussion'] } })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Attach profilePhoto
+    const userDoc = await User.findOne({ username }).select('username profilePhoto photoVisibility followers').lean();
+    const photo = userDoc && canViewPhoto(userDoc, currentUsername) ? userDoc.profilePhoto || '' : '';
+    const result = posts.map(p => ({ ...p, profilePhoto: photo }));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST ROUTES
 app.get('/api/posts', async (req, res) => {
   try {
     const { currentUsername } = req.query;
-    const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const stories = await Post.find({ type: 'story', createdAt: { $gte: twentyFourHoursAgo } }).sort({ createdAt: -1 }).lean();
-    const allPosts = await Post.find().sort({ createdAt: -1 }).lean();
+
+    const [stories, allPosts] = await Promise.all([
+      Post.find({ type: 'story', createdAt: { $gte: new Date(Date.now() - 86400000) } })
+        .sort({ createdAt: -1 })
+        .lean(),
+      Post.find({ type: { $ne: 'story' } })
+        .sort({ createdAt: -1 })
+        .lean(),
+    ]);
     let allContent = [...stories, ...allPosts];
 
-    // PRIVACY FILTER: remove posts from private accounts that currentUser cannot view
+    // PRIVACY FILTER
     if (currentUsername) {
       const allUsers = await User.find().select('username isPrivate followers').lean();
       const privacyMap = {};
       for (const u of allUsers) {
         privacyMap[u.username] = { isPrivate: u.isPrivate, followers: u.followers || [] };
       }
-
-      const before = allContent.length;
       allContent = allContent.filter(item => {
         const owner = privacyMap[item.username];
-        if (!owner) {
-          console.log(`[PRIVACY] no privacy data for post owner: ${item.username} — including by default`);
-          return true;
-        }
-        if (!owner.isPrivate) {
-          console.log(`[PRIVACY] post by ${item.username} (PUBLIC) → VISIBLE to ${currentUsername}`);
-          return true;
-        }
-        if (item.username === currentUsername) {
-          console.log(`[PRIVACY] post by ${item.username} (PRIVATE, own post) → VISIBLE to ${currentUsername}`);
-          return true;
-        }
-        const isFollower = owner.followers.includes(currentUsername);
-        console.log(`[PRIVACY] post by ${item.username} (PRIVATE) follower=${isFollower} viewer=${currentUsername} → ${isFollower ? 'VISIBLE' : 'HIDDEN'}`);
-        return isFollower;
+        if (!owner) return true;
+        if (!owner.isPrivate) return true;
+        if (item.username === currentUsername) return true;
+        return owner.followers.includes(currentUsername);
       });
-      const removed = before - allContent.length;
-      if (removed > 0) console.log(`[PRIVACY] filtered out ${removed} private posts from feed for ${currentUsername}`);
     }
 
     // BLOCK FILTER + PROFILE MUTE FILTER
     if (currentUsername) {
-      const currentUser = await User.findOne({ username: currentUsername }).select('blockedUsers profileMutedUsers').lean();
-      // Block filter: both directions
+      const [currentUser, blockers] = await Promise.all([
+        User.findOne({ username: currentUsername }).select('blockedUsers profileMutedUsers').lean(),
+        User.find({ 'blockedUsers.username': currentUsername }).select('username').lean(),
+      ]);
       const blockedUsernames = (currentUser?.blockedUsers || []).map(b => b.username);
-      const blockers = await User.find({ 'blockedUsers.username': currentUsername }).select('username').lean();
       const blockerUsernames = blockers.map(b => b.username);
       const allBlocked = new Set([...blockedUsernames, ...blockerUsernames]);
-      // Profile mute filter: hide posts from profile-muted users
       const mutedUsernames = new Set();
       for (const m of (currentUser?.profileMutedUsers || [])) {
         if (m.duration === 'forever' || (m.expiresAt && new Date(m.expiresAt) > new Date())) {
@@ -1853,18 +1849,15 @@ app.get('/api/posts', async (req, res) => {
       }
     }
 
-    // Attach profilePhoto to each content item (respecting photo visibility)
+    // Attach profilePhoto (respecting photo visibility)
     const allUsernames = [...new Set(allContent.map(p => p.username))];
     const userPhotos = await User.find({ username: { $in: allUsernames } }).select('username profilePhoto photoVisibility followers').lean();
     const photoMap = {};
     for (const u of userPhotos) {
-      if (canViewPhoto(u, currentUsername)) {
-        photoMap[u.username] = u.profilePhoto || '';
-      } else {
-        photoMap[u.username] = '';
-      }
+      photoMap[u.username] = canViewPhoto(u, currentUsername) ? (u.profilePhoto || '') : '';
     }
     allContent = allContent.map(p => ({ ...p, profilePhoto: photoMap[p.username] || '' }));
+
     res.json(allContent);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1962,20 +1955,19 @@ app.get('/api/posts/discussions', async (req, res) => {
     const { username, sort: sortParam, search } = req.query;
     const sortMode = ['trending', 'popular', 'recent'].includes(sortParam) ? sortParam : 'trending';
 
-    let discussions = await Post.find({ type: 'discussion' }).lean();
+    // Run all three initial queries in parallel
+    const [discussions, userDoc, currentUser, blockers] = await Promise.all([
+      Post.find({ type: 'discussion' }).lean(),
+      username ? User.findOne({ username }).select('interests').lean() : null,
+      username ? User.findOne({ username }).select('blockedUsers profileMutedUsers').lean() : null,
+      username ? User.find({ 'blockedUsers.username': username }).select('username').lean() : [],
+    ]);
 
-    // Get user interests if username provided
-    let userInterests = [];
-    if (username) {
-      const userDoc = await User.findOne({ username }).select('interests').lean();
-      if (userDoc) userInterests = userDoc.interests || [];
-    }
+    const userInterests = userDoc?.interests || [];
 
     // Block + profile mute filter
     if (username) {
-      const currentUser = await User.findOne({ username }).select('blockedUsers profileMutedUsers').lean();
       const blockedUsernames = (currentUser?.blockedUsers || []).map(b => b.username);
-      const blockers = await User.find({ 'blockedUsers.username': username }).select('username').lean();
       const blockerUsernames = blockers.map(b => b.username);
       const allBlocked = new Set([...blockedUsernames, ...blockerUsernames]);
       const mutedUsernames = new Set();

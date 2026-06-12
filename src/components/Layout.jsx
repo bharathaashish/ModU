@@ -5,9 +5,9 @@ import { useAuth } from '../context/AuthContext';
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, notifications } = useAuth();
 
-  const unreadCount = user?.notifications?.filter(n => !n.isRead).length || 0;
+  const unreadCount = notifications?.filter(n => !n.isRead).length || 0;
 
   const renderTopBar = () => {
     if (location.pathname === '/') {

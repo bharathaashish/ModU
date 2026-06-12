@@ -175,10 +175,9 @@ export default function Profile() {
         setProfileUser(user);
       }
 
-      const postsRes = await fetch('/api/posts');
+      const postsRes = await fetch(`/api/users/${profileUsername}/posts?currentUsername=${user?.username}`);
       if (postsRes.ok) {
-        const allPosts = await postsRes.json();
-        const posts = allPosts.filter(post => post.username === profileUsername && post.type === 'post');
+        const posts = await postsRes.json();
         setUserPosts(posts);
       }
 

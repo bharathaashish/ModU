@@ -20,7 +20,6 @@ function storeUserEssentials(user) {
       profilePhoto: user.profilePhoto,
       interests: user.interests,
       isPrivate: user.isPrivate,
-      notifications: user.notifications || []
     };
     localStorage.setItem('currentUser', JSON.stringify(essentialUser));
   } catch (err) {
@@ -30,6 +29,7 @@ function storeUserEssentials(user) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser);
+  const [notifications, setNotifications] = useState([]);
 
   const updateUser = (newData) => {
     setUser(newData);
@@ -126,10 +126,8 @@ export function AuthProvider({ children }) {
     try {
       const res = await fetch(`/api/users/${user.username}/notifications`);
       if (res.ok) {
-        const notifications = await res.json();
-        const updatedUser = { ...user, notifications };
-        setUser(updatedUser);
-        storeUserEssentials(updatedUser);
+        const data = await res.json();
+        setNotifications(data);
       }
     } catch (err) {
       console.error('Failed to refresh notifications:', err);
@@ -143,7 +141,7 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, updateUser, login, register, loginWithGoogle, logout, updateUserSettings, updateUserProfile, refreshNotifications }}>
+    <AuthContext.Provider value={{ user, setUser, updateUser, login, register, loginWithGoogle, logout, updateUserSettings, updateUserProfile, refreshNotifications, notifications, setNotifications }}>
       {children}
     </AuthContext.Provider>
   );
